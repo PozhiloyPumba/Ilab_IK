@@ -1,0 +1,12 @@
+.vscode
+test10*
+
+# delete cmake files
+
+/CMakeFiles
+cmake_install.cmake
+CMakeCache.txt
+
+# delete executable files
+
+2Q_cache
