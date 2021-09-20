@@ -2,11 +2,11 @@
 
 To build & run it you should follow the instruction:
 
-> <p>make</p>
-> <p>./2Q_cache</p>
+> make<br>
+> ./2Q_cache
 
 Or you can build Makefile by yourself:
 
-> <p>cmake CMakeLists.txt</p>
-> make</p>
-> ./2Q_cache</p>
+> cmake CMakeLists.txt<br>
+> make<br>
+> ./2Q_cache
