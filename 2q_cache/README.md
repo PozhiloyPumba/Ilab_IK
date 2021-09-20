@@ -8,5 +8,5 @@ To build & run it you should follow the instruction:
 Or you can build Makefile by yourself:
 
 > <p>cmake CMakeLists.txt</p>
-> <p>make</p>
-> <p>./2Q_cache</p>
+> make</p>
+> ./2Q_cache</p>
