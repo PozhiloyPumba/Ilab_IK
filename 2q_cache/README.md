@@ -2,11 +2,11 @@
 
 To build & run it you should follow the instruction:
 
-> **make**
+> **make**\n
 > **./main**
 
 Or you can build Makefile by yourself:
 
-> **cmake CMakeLists.txt**
-> **make**
+> **cmake CMakeLists.txt**\n
+> **make**\n
 > **./main**
