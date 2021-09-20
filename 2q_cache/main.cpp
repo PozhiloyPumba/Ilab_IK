@@ -1,9 +1,5 @@
-#include <iostream>
-#include <unordered_map>
-#include <list>
-#include <cstring>
-#include <cassert>
 #include "cache.hpp"
+#include <cassert>
 
 //=====================================================================================================
 

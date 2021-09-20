@@ -1,3 +1,7 @@
+#include <iostream>
+#include <unordered_map>
+#include <list>
+#include <cstring>
 
 enum name_of_boxes{
 	IN = 0,
