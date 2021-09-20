@@ -1,6 +1,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <list>
+#include <cstring>
+#include <cassert>
 #include "cache.hpp"
 
 //=====================================================================================================
@@ -10,12 +12,16 @@ int main()
 	int sz, count;
 	int hit_counter = 0;
 	std::cin >> sz >> count;
-	cache_t <int, int> c (sz);
+	assert(std::cin.good());
+
+	cache_t <int> c (sz);
 
 	for(int i = 0; i < count; i++)
 	{
 		int key;
 		std::cin >> key;
+		assert(std::cin.good());
+
 		hit_counter += c.lookup_update(key);
 	}
 
