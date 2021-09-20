@@ -21,6 +21,6 @@ int main()
 		hit_counter += c.lookup_update(key);
 	}
 
-	std::cout << hit_counter << std::endl;
+	std::cout << "hits =" << hit_counter << std::endl;
 	return 0;
 }
