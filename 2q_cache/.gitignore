@@ -10,3 +10,4 @@ CMakeCache.txt
 # delete executable files
 
 2Q_cache
+*.out

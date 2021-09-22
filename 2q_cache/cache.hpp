@@ -57,19 +57,40 @@ struct cache_t{
 
 //-----------------------------------------------------------------------------------------------------
 
-	bool lookup_update(T key){
+	bool LRU(T key)
+	{
 		auto hit = hash_.find(key);
 
 		if(hit == hash_.end()){	// if elem is not found in lists, we 
 			if(in_.full()){
-				auto elit = hash_.find((in_.box_.back()).first)->second;
-				elit->second = OUT;
-				out_.box_.splice(out_.box_.begin(), in_.box_, elit);
-				
+				in_.box_.pop_back();
+			}
+			in_.box_.push_front({key, IN});
+			hash_.insert({key, in_.box_.begin()});
+
+			return false;
+		}
+		in_.box_.splice(in_.box_.begin(), in_.box_, hit->second);
+		
+		return true;
+	}
+
+	bool lookup_update(T key)
+	{
+		if(sz_ < 5)
+			return LRU(key);
+		
+		auto hit = hash_.find(key);
+
+		if(hit == hash_.end()){	// if elem is not found in lists, we 
+			if(in_.full()){
 				if(out_.full()){
 					hash_.erase(hash_.find((out_.box_.back()).first));
 					out_.box_.pop_back();
 				}
+				auto elit = hash_.find((in_.box_.back()).first)->second;
+				elit->second = OUT;
+				out_.box_.splice(out_.box_.begin(), in_.box_, elit);
 			}
 			in_.box_.push_front({key, IN});
 			hash_.insert({key, in_.box_.begin()});
