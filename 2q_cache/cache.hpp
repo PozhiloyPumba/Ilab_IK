@@ -63,6 +63,7 @@ struct cache_t{
 
 		if(hit == hash_.end()){	// if elem is not found in lists, we 
 			if(in_.full()){
+				hash_.erase(hash_.find((in_.box_.back()).first));
 				in_.box_.pop_back();
 			}
 			in_.box_.push_front({key, IN});
