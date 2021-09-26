@@ -1,4 +1,4 @@
-# It is beladi cache. It is only for compare with my cache and it looks not positive((
+# It is beladi cache. It is only for compare with my cache and it looks not positive(my code does not pretend to be of good quality and only to compare the number of hits)((
 
 ## To build & run it you should follow the instruction:
 ```
