@@ -12,13 +12,13 @@ int main()
 
 	cache_t <int> c (sz);
 
-	for(size_t i = 0; i < count; i++)
+	for(size_t i = 0; i < count; ++i)
 	{
-		int key;
-		std::cin >> key;
+		int data;
+		std::cin >> data;
 		assert(std::cin.good() == true);
 
-		hit_counter += c.lookup_update(key);
+		hit_counter += c.lookup_update(data);
 	}
 
 	std::cout << "hits = " << hit_counter << std::endl;

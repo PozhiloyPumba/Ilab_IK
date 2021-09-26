@@ -1,12 +1,15 @@
-**2Q cache**
+# **2Q cache**
 
-To build & run it you should follow the instruction:
+## To build & run it you should follow the instruction:
+```
+$ make
+$ ./2Q_cache
+```
+---
 
-> make<br>
-> ./2Q_cache
-
-Or you can build Makefile by yourself:
-
-> cmake CMakeLists.txt<br>
-> make<br>
-> ./2Q_cache
+## Or you can build Makefile by yourself(with 2Q_cache will  be created "unit_testing" it is file for checking working capacity of cache):
+```
+$ cmake CMakeLists.txt
+$ make
+$ ./2Q_cache
+```
