@@ -1,5 +1,4 @@
-**This is a repository for C++ Ilab course **
-
+# This is a repository for C++ Ilab course
 
 | Name of directory  | Content in it |
 | --- | --- |

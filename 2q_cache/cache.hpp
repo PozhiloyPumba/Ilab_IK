@@ -111,7 +111,7 @@ class cache_t{
 		{
 			auto hit = hash_.find(key);
 
-			if(hit == hash_.end()){	// if elem is not found in lists, we 
+			if(hit == hash_.end()){	// if elem is not found in lists, we insert it in "in_" and splice back of "in_" to out and back of "out_" send to hell
 				no_in_cache(key);
 				return false;
 			}
