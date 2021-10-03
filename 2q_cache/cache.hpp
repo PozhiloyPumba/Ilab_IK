@@ -66,7 +66,7 @@ class cache_t{
 
 //-----------------------------------------------------------------------------------------------------
 
-	void in_cache(auto elit)
+	void in_cache(ListIt elit)
 	{
 		switch(elit->second){ // name of box
 			case IN:	// if elem locates in "in_" then we do nothing
