@@ -1,6 +1,11 @@
 #include "cache.hpp"
 #include <cassert>
 
+template <typename T>
+T slow_get_page(T key){
+	return key;
+}
+
 //=====================================================================================================
 
 int main()
@@ -18,7 +23,7 @@ int main()
 		std::cin >> data;
 		assert(std::cin.good() == true);
 
-		hit_counter += c.lookup_update(data);
+		hit_counter += c.lookup_update(data, slow_get_page <int>);
 	}
 
 	std::cout << "hits = " << hit_counter << std::endl;
