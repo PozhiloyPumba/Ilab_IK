@@ -5,6 +5,9 @@
 
 void RunSingleTest (const std::pair<std::string, size_t> &test);
 
+template <typename T> 
+T slow_get_page(T key);
+
 //=====================================================================================================
 
 int main () {
@@ -18,10 +21,12 @@ int main () {
 							{"tests/test7.txt", 32},
 							{"tests/test8.txt", 7},
 							{"tests/test9.txt", 10},       	// size of test10.txt it is almost 4 Gb and I don't want push it in git
-							{"tests/test11.txt", 1998071}
+							{"tests/test11.txt", 1998071},
+							{"tests/test12.txt", 2},
+							{"tests/test13.txt", 7}
 	};
 
-	for (size_t i = 0; i < 10; i++)
+	for (size_t i = 0; i < 12; ++i)
 		RunSingleTest (tests [i]);
 
 	return 0;
@@ -48,7 +53,7 @@ void RunSingleTest (const std::pair<std::string, size_t> &test)
 		std::cin >> key;
 		assert(std::cin.good() == true);
 
-		hit_counter += c.lookup_update(key);
+		hit_counter += c.lookup_update(key, slow_get_page <int>);
 	}
 
 	fclose(stdin);
@@ -62,4 +67,11 @@ void RunSingleTest (const std::pair<std::string, size_t> &test)
     }
 
     std::cin.clear ();
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+template <typename T>
+T slow_get_page(T key){
+	return key;
 }
