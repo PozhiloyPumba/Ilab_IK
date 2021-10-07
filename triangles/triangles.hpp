@@ -4,6 +4,8 @@
 #include <algorithm>
 #include "vector.hpp"
 
+// TODO: is_triangle()
+
 namespace triangle{
 	template <typename T>
 	class triangle_t{
@@ -17,11 +19,20 @@ namespace triangle{
 			vertex_[2] = z;
 		}
 
-		vector::vector_t<T> get_vertex(int vertex_number) const{
+		triangle_t(const triangle_t<T> &other){
+			vector::vector_t<T> tmp;
+			for(size_t i = 0; i < 3; ++i)
+			{
+				tmp = other.get_vertex(i);
+				set_vertex(tmp , i);
+			}
+		}
+
+		vector::vector_t<T> get_vertex(size_t vertex_number) const{
 			return vertex_[vertex_number];
 		}
 
-		void set_vertex(vector::vector_t<T> &x, int vertex_number){
+		void set_vertex(vector::vector_t<T> &x, size_t vertex_number){
 			vertex_[vertex_number] = x;
 		}
 

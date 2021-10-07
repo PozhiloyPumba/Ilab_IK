@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cmath>
 
+// TODO: cross and dot 
+
 namespace vector{
 	template <typename T>
 	class vector_t{
