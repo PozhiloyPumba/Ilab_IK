@@ -43,9 +43,8 @@ namespace vector{
 		{
 			float sum = 0;
 			for(size_t i = 0; i < 3; ++i)
-			{
 				sum += coord_[i] * coord_[i];
-			}
+			
 			return sqrt(sum);
 		}
 
