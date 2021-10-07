@@ -18,19 +18,35 @@ namespace vector{
 		}
 		vector_t(const vector_t<T> &other){
 			for(size_t i = 0; i < 3; ++i)
-				set_coord(other.get_coord(i), i);
+			{
+				const T tmp = other.get_coord(i);
+				set_coord(tmp, i);
+			}
 		}
 
-		T get_coord(int axis) const{
+		T get_coord(int axis) const
+		{
 			return coord_[axis];
 		}
 
-		void set_coord(T x, int axis){
+		void set_coord(T x, int axis)
+		{
 			coord_[axis] = x;
 		}
 
-		T max_abs_coord(){
+		T max_abs_coord()
+		{
 			return std::max({std::abs(coord_[0]), std::abs(coord_[1]), std::abs(coord_[2])});
+		}
+
+		float length()
+		{
+			float sum = 0;
+			for(size_t i = 0; i < 3; ++i)
+			{
+				sum += coord_[i] * coord_[i];
+			}
+			return sqrt(sum);
 		}
 
 		vector_t<T> operator- ();
