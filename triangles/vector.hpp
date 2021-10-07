@@ -13,10 +13,8 @@ namespace vector{
 
 		public:
 
-		vector_t(T x = 0, T y = 0, T z = 0){
-			coord_[0] = x;
-			coord_[1] = y;
-			coord_[2] = z;
+		vector_t(T x = 0, T y = 0, T z = 0) : 
+			coord_ {x, y, z}{
 		}
 		vector_t(const vector_t<T> &other){
 			for(size_t i = 0; i < 3; ++i)

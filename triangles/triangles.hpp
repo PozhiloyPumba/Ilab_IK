@@ -13,10 +13,8 @@ namespace triangle{
 
 		public:
 
-		triangle_t(vector::vector_t<T> x = 0, vector::vector_t<T> y = 0, vector::vector_t<T> z = 0){
-			vertex_[0] = x;
-			vertex_[1] = y;
-			vertex_[2] = z;
+		triangle_t(vector::vector_t<T> x = 0, vector::vector_t<T> y = 0, vector::vector_t<T> z = 0) : 
+			vertex_ {x, y, z}{
 		}
 
 		triangle_t(const triangle_t<T> &other){
