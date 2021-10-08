@@ -9,9 +9,11 @@
 namespace triangle{
 	template <typename T>
 	class triangle_t{
+
+	private:
 		vector::vector_t<T> vertex_[3];
 
-		public:
+	public:
 
 		triangle_t(vector::vector_t<T> x = 0, vector::vector_t<T> y = 0, vector::vector_t<T> z = 0) : 
 			vertex_ {x, y, z}{
@@ -26,16 +28,30 @@ namespace triangle{
 			}
 		}
 
-		vector::vector_t<T> get_vertex(size_t vertex_number) const{
+		vector::vector_t<T> get_vertex(size_t vertex_number) const
+		{
 			return vertex_[vertex_number];
 		}
 
-		void set_vertex(vector::vector_t<T> &x, size_t vertex_number){
+		void set_vertex(vector::vector_t<T> &x, size_t vertex_number)
+		{
 			vertex_[vertex_number] = x;
 		}
 
-		T max_abs_coord(){
+		T max_abs_coord() const
+		{
 			return std::max({vertex_[0].max_abs_coord(), vertex_[1].max_abs_coord(), vertex_[2].max_abs_coord()});
+		}
+
+		bool is_triangle() const
+		{
+			vector::vector_t<T> a1 = get_vertex(0) - get_vertex(1);
+			vector::vector_t<T> a2 = get_vertex(1) - get_vertex(2);
+
+			if(a1.cross(a2) != 0){
+				return true;
+			}
+			return false;
 		}
 	};
 
@@ -56,6 +72,5 @@ namespace triangle{
 		right.set_vertex(z, 2);
 	
 		return left; 
-	}
-	
+	}	
 }
