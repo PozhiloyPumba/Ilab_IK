@@ -1,17 +1,14 @@
 #include <iostream>
-#include <cmath>
-#include "vector.hpp"
-#include "triangles.hpp"
 #include "octotree.hpp"
 
 int main()
 {
-	size_t count_triangles;
-	std::cin >> count_triangles;
+	size_t countTriangles;
+	std::cin >> countTriangles;
 
-	tree::octotree_t <float> tree;
+	tree::octotree_t <double> tree;
 
-	tree.fill_tree(count_triangles);
+	tree.fill_tree(countTriangles);
 
 	return 0;
 }
