@@ -1,15 +1,3 @@
 # **INTERSECTING TRIANGLES**
 
-## To build & run it you should follow the instruction:
-```
-$ make
-$ ./triangles
-```
----
-
-## Or you can build Makefile by yourself:
-```
-$ cmake CMakeLists.txt
-$ make
-$ ./triangles
-```
+## This project was made with Daniil Frolov (https://github.com/Exactlywb) and Vladislav Belov (https://github.com/kolobabka) https://github.com/Exactlywb/VladimirovsCourse/tree/master/triangles_together
