@@ -1,9 +1,10 @@
-*/.vscode
-test10*
+*.vscode
+*.dist
 *.json
 
 # delete cmake files
 
+*/build
 */CMakeFiles
 */cmake_install.cmake
 */CMakeCache.txt
