@@ -1,0 +1,13 @@
+.vscode
+test10*
+
+# delete cmake files
+build/
+./Unit_test/build
+.dist
+
+# delete executable files
+
+2Q_cache
+unit_testing
+*.out
