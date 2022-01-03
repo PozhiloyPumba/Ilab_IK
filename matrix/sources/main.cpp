@@ -5,7 +5,7 @@
 
 int main ()
 {
-    int n, det;
+    int n;
     std::cin >> n;
 
     matrix::Matrix<double> matr (n, n);
