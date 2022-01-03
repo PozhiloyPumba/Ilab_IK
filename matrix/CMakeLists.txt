@@ -21,6 +21,14 @@ if(CLANG_FORMAT)
 endif()
 
 set (EXEC_FILE "matrix")
+set (TEST_FILE "tests")
+
+set (GTEST_ROOT ${CMAKE_SOURCE_DIR}/googletests/gTest)
+find_package(GTest REQUIRED)
+
+set (TESTS	
+    sources/test.cpp
+)
 
 set (SOURCES
     sources/main.cpp
@@ -31,7 +39,13 @@ set (HEADERS
 )
 
 add_executable(${EXEC_FILE} ${SOURCES})
+add_executable(${TEST_FILE} ${TESTS})
+
 target_include_directories(${EXEC_FILE} PRIVATE include)
+target_include_directories(${TEST_FILE} PRIVATE include)
+
+target_link_libraries(${TEST_FILE} PRIVATE "${GTEST_LIBRARIES}" "pthread")
+target_include_directories(${TEST_FILE} PRIVATE headers "${GTEST_INCLUDE_DIRS}")
 
 add_compile_options(
     -Wall

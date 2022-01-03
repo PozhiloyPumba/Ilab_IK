@@ -5,13 +5,13 @@
 
 int main ()
 {
-    int n;
+    int n, det;
     std::cin >> n;
 
-    matrix::Matrix<std::complex<double>> matr(n, n);// = matrix::Matrix<int>::randomIntMatrix (n, det);
+    matrix::Matrix<double> matr (n, n);
 
     std::cin >> matr;
-    std::cout << matr.det() << std::endl;
+    std::cout << matr.det () << std::endl;
 
     return 0;
 }

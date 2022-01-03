@@ -5,9 +5,8 @@
 #include <ctime>
 #include <iostream>
 
-
 namespace matrix {
-    const double EPSILON = 10E-5;
+    const double EPSILON = 10E-15;
 
     template <typename T = float>
     class Matrix final {
@@ -142,15 +141,15 @@ namespace matrix {
 
             int randCoef;
             for (int i = 1; i < size; ++i) {
-                while(!(randCoef = rand () % 11 - 5))
+                while (!(randCoef = rand () % 11 - 5))
                     ;
-                
+
                 for (int j = 0; j < size; ++j)
                     rndMtrx[i][j] += randCoef * rndMtrx[0][j];
             }
 
             for (int i = 0; i < size - 1; ++i) {
-                while(!(randCoef = rand () % 11 - 5))
+                while (!(randCoef = rand () % 11 - 5))
                     ;
 
                 for (int j = 0; j < size; ++j)
@@ -241,9 +240,9 @@ namespace matrix {
         //-----------------------------------------------------------------------------------------------------
 
         T det () const;
-        
+
         //-----------------------------------------------------------------------------------------------------
-        
+
         T gauss ()
         {
             int sign = 1;
@@ -259,7 +258,7 @@ namespace matrix {
                     sign *= -1;
                 }
 
-                if (std::abs(rows[i][i]) <= EPSILON)
+                if (std::abs (rows[i][i]) <= EPSILON)
                     return T{0};
 
                 T max = rows[i][i];
@@ -273,9 +272,8 @@ namespace matrix {
             }
 
             T det = (sign == 1) ? rows[0][0] : -rows[0][0];
-            for (int i = 1; i < nCols_; ++i) {
+            for (int i = 1; i < nCols_; ++i)
                 det *= rows[i][i];
-            }
 
             delete[] rows;
 
@@ -325,7 +323,7 @@ namespace matrix {
     }
 
     //-----------------------------------------------------------------------------------------------------
-    
+
     template <typename T = float>
     std::istream &operator>> (std::istream &in, Matrix<T> &matrix)
     {
