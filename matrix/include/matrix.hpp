@@ -2,12 +2,25 @@
 #define __MATRIX_HPP__
 
 #include <complex>
-#include <concepts>
+#include <cstring>
 #include <ctime>
 #include <iostream>
 
 namespace matrix {
     const double EPSILON = 10E-15;
+
+    class MyException {
+    private:
+        std::string m_error;
+
+    public:
+        MyException (std::string error)
+            : m_error (error)
+        {
+        }
+
+        const char *whoami () { return m_error.c_str (); }
+    };
 
     template <typename T = double>
     class Matrix final {
@@ -54,14 +67,14 @@ namespace matrix {
             int sign = 1;
             int withMax;
 
-            if (param == true)
+            if (param)
                 withMax = maxSubColElem (fakeRows, fakeCols, index);
             else
                 withMax = maxSubRowElem (fakeRows, fakeCols, index);
 
             if (withMax != index) {
                 sign = -1;
-                if (param == true)
+                if (param)
                     std::swap (fakeRows[index], fakeRows[withMax]);
                 else
                     std::swap (fakeCols[index], fakeCols[withMax]);
@@ -125,34 +138,30 @@ namespace matrix {
 
         struct Proxy final {
             T *row_;
-            int nCols_;
+            int proxynCols_;
 
-            Proxy (T *row, int nCols = -1)
+            Proxy (T *row, int nCols)
                 : row_ (row),
-                  nCols_ (nCols)
+                  proxynCols_ (nCols)
             {
             }
 
             //-----------------------------------------------------------------------------------------------------
 
-            const T &operator[] (int col) const  // in case of an error, it will return a reference to the first element
+            const T &operator[] (int col) const
             {
-                if (nCols_ == -1 || col >= nCols_) {
-                    std::cout << "there is no such element in the matrix" << std::endl;
-                    return row_[0];
-                }
+                if (col >= proxynCols_ || col < 0)
+                    throw MyException{"you tried to get data from nonexistent column"};
 
                 return row_[col];
             }
 
             //-----------------------------------------------------------------------------------------------------
 
-            T &operator[] (int col)  // in case of an error, it will return a reference to the first element
+            T &operator[] (int col)
             {
-                if (nCols_ == -1 || col >= nCols_) {
-                    std::cout << "there is no such element in the matrix" << std::endl;
-                    return row_[0];
-                }
+                if (col >= proxynCols_ || col < 0)
+                    throw MyException{"you tried to get data from nonexistent column"};
 
                 return row_[col];
             }
@@ -307,20 +316,20 @@ namespace matrix {
 
         //=====================================================================================================
 
-        Proxy operator[] (const int row)  // in case of an error, it will return a reference to the first element
+        Proxy operator[] (const int row)
         {
-            if (row >= nRows_)
-                return arr_;
+            if (row >= nRows_ || row < 0)
+                throw MyException{"you tried to get data from nonexistent row"};
 
             return Proxy (arr_ + nCols_ * row, nCols_);
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        const Proxy operator[] (const int row) const  // in case of an error, it will return a reference to the first element
+        const Proxy operator[] (const int row) const
         {
-            if (row >= nRows_)
-                return arr_;
+            if (row >= nRows_ || row < 0)
+                throw MyException{"you tried to get data from nonexistent row"};
 
             return Proxy (arr_ + nCols_ * row, nCols_);
         }
@@ -350,10 +359,9 @@ namespace matrix {
 
         T det () const
         {
-            if (nRows_ != nCols_) {
-                std::cout << "matrix is not square! I don't know what are you want from me" << std::endl;
-                return T{};
-            }
+            if (nRows_ != nCols_)
+                throw MyException{"matrix is not square! I don't know what are you want from me"};
+
             return det (std::is_integral<T> ());
         }
 
