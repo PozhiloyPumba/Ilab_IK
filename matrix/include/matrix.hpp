@@ -94,26 +94,6 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T det (std::false_type) const
-        {
-            Matrix<T> support = *this;
-            T det = support.fakeGauss ();
-
-            return det;
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        T det (std::true_type) const
-        {
-            Matrix<double> support = *this;
-            double det = support.fakeGauss ();
-
-            return round (det);
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
         int *createFakeCols ()
         {
             int *fakeCols = new int[nCols_];  // for fake swap cols
@@ -168,6 +148,57 @@ namespace matrix {
         };
 
         //-----------------------------------------------------------------------------------------------------
+
+        T det (std::false_type) const
+        {
+            Matrix<T> support = *this;
+            T det = support.fakeGauss ();
+
+            return det;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        T det (std::true_type) const
+        {
+            Matrix<double> support = *this;
+            double det = support.det ();
+
+            return round (det);
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        T fakeGauss ()
+        {
+            int sign = 1;
+            T **fakeRows = createFakeRows ();
+            int *fakeCols = createFakeCols ();
+
+            for (int i = 0; i < nRows_; ++i) {
+                sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, true);
+                sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, false);
+
+                if (std::abs (fakeRows[i][fakeCols[i]]) <= EPSILON)
+                    return T{};
+
+                T max = fakeRows[i][fakeCols[i]];
+
+                for (int j = i + 1; j < nRows_; ++j) {
+                    T del = fakeRows[j][fakeCols[i]] / max;
+
+                    for (int k = i + 1; k < nCols_; ++k)  // we can not nullify the column that we will not pay attention to and thn k = i +1 (not i)
+                        fakeRows[j][fakeCols[k]] -= del * fakeRows[i][fakeCols[k]];
+                }
+            }
+
+            T determinant = countDet (fakeRows, fakeCols, sign);
+
+            delete[] fakeRows;
+            delete[] fakeCols;
+
+            return determinant;
+        }
 
     public:
         Matrix (const int nRows = 0, const int nCols = 0)  // ctor
@@ -363,39 +394,6 @@ namespace matrix {
                 throw MyException{"matrix is not square! I don't know what are you want from me"};
 
             return det (std::is_integral<T> ());
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        T fakeGauss ()
-        {
-            int sign = 1;
-            T **fakeRows = createFakeRows ();
-            int *fakeCols = createFakeCols ();
-
-            for (int i = 0; i < nRows_; ++i) {
-                sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, true);
-                sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, false);
-
-                if (std::abs (fakeRows[i][fakeCols[i]]) <= EPSILON)
-                    return T{};
-
-                T max = fakeRows[i][fakeCols[i]];
-
-                for (int j = i + 1; j < nRows_; ++j) {
-                    T del = fakeRows[j][fakeCols[i]] / max;
-
-                    for (int k = i + 1; k < nCols_; ++k)  // we can not nullify the column that we will not pay attention to and thn k = i +1 (not i)
-                        fakeRows[j][fakeCols[k]] -= del * fakeRows[i][fakeCols[k]];
-                }
-            }
-
-            T determinant = countDet (fakeRows, fakeCols, sign);
-
-            delete[] fakeRows;
-            delete[] fakeCols;
-
-            return determinant;
         }
     };
 
