@@ -21,7 +21,7 @@ $ ./matrix
 ---
 ## Input data:
 ```
-n - size of a square matrix
+N - size of a square matrix
 NхN numbers
 ```
 ## Output data:
