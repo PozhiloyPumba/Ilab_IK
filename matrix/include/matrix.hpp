@@ -1,5 +1,5 @@
-#ifndef __MATRIX_HPP__
-#define __MATRIX_HPP__
+#ifndef MATRIX_HPP_
+#define MATRIX_HPP_
 
 #include <complex>
 #include <cstring>
@@ -11,15 +11,15 @@ namespace matrix {
 
     class MyException {
     private:
-        std::string m_error;
+        std::string error_;
 
     public:
         MyException (std::string error)
-            : m_error (error)
+            : error_ (error)
         {
         }
 
-        const char *whoami () { return m_error.c_str (); }
+        const char *what () const { return error_.c_str (); }
     };
 
     template <typename T = double>
@@ -30,39 +30,33 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        int maxSubColElem (T **rows, int *cols, int nCol)
+        int maxSubColElem (T **rows, const int *cols, const int nCol) const noexcept
         {
-            T *max = rows[cols[nCol]];
             int maxRow = nCol;
 
-            for (int i = nCol + 1; i < nRows_; ++i) {
-                if (std::abs (max[cols[nCol]]) < std::abs (rows[i][cols[nCol]])) {
-                    max = rows[i];
+            for (int i = nCol + 1; i < nRows_; ++i)
+                if (std::abs (rows[maxRow][cols[nCol]]) < std::abs (rows[i][cols[nCol]]))
                     maxRow = i;
-                }
-            }
 
             return maxRow;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        int maxSubRowElem (T **rows, int *cols, int nRow)
+        int maxSubRowElem (T **rows, const int *cols, const int nRow) const noexcept
         {
             int maxCol = nRow;
 
-            for (int i = nRow + 1; i < nCols_; ++i) {
-                if (std::abs (rows[nRow][cols[maxCol]]) < std::abs (rows[nRow][cols[i]])) {
+            for (int i = nRow + 1; i < nCols_; ++i)
+                if (std::abs (rows[nRow][cols[maxCol]]) < std::abs (rows[nRow][cols[i]]))
                     maxCol = i;
-                }
-            }
 
             return maxCol;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        int fakeSwapWithBiggest (T **fakeRows, int *fakeCols, int index, bool param)
+        int fakeSwapWithBiggest (T **fakeRows, int *fakeCols, const int index, const bool param) const noexcept
         {
             int sign = 1;
             int withMax;
@@ -84,17 +78,17 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T countDet (T **rows, int *cols, int sign)
+        T countDet (T **rows, const int *cols, const int sign) const noexcept
         {
-            T det = (sign == 1) ? rows[0][cols[0]] : -rows[0][cols[0]];
+            T det = rows[0][cols[0]];
             for (int i = 1; i < nCols_; ++i)
                 det *= rows[i][cols[i]];
-            return det;
+            return (sign == 1) ? det : -det;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        int *createFakeCols ()
+        int *createFakeCols () const
         {
             int *fakeCols = new int[nCols_];  // for fake swap cols
             for (int i = 0; i < nCols_; ++i)
@@ -105,7 +99,7 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T **createFakeRows ()
+        T **createFakeRows () const
         {
             T **fakeRows = new T *[nRows_];  // for fake swap rows
             for (int i = 0; i < nRows_; ++i)
@@ -128,7 +122,7 @@ namespace matrix {
 
             //-----------------------------------------------------------------------------------------------------
 
-            const T &operator[] (int col) const
+            const T &operator[] (const int col) const
             {
                 if (col >= proxynCols_ || col < 0)
                     throw MyException{"you tried to get data from nonexistent column"};
@@ -138,7 +132,7 @@ namespace matrix {
 
             //-----------------------------------------------------------------------------------------------------
 
-            T &operator[] (int col)
+            T &operator[] (const int col)
             {
                 if (col >= proxynCols_ || col < 0)
                     throw MyException{"you tried to get data from nonexistent column"};
@@ -298,21 +292,21 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        int getNRows () const
+        int getNRows () const noexcept
         {
             return nRows_;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        int getNCols () const
+        int getNCols () const noexcept
         {
             return nCols_;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        static Matrix<int> randomIntMatrix (int size, int det)
+        static Matrix<int> randomIntMatrix (const int size, const int det)
         {
             Matrix<int> rndMtrx (size, size);
 
@@ -327,7 +321,7 @@ namespace matrix {
 
             int randCoef;
             for (int i = 1; i < size; ++i) {
-                while (!(randCoef = rand () % 11 - 5))
+                while (!(randCoef = rand () % 11 - 5))  // because I want randCoef != 0
                     ;
 
                 for (int j = 0; j < size; ++j)
@@ -335,7 +329,7 @@ namespace matrix {
             }
 
             for (int i = 0; i < size - 1; ++i) {
-                while (!(randCoef = rand () % 11 - 5))
+                while (!(randCoef = rand () % 11 - 5))  // because I want randCoef != 0
                     ;
 
                 for (int j = 0; j < size; ++j)
@@ -420,10 +414,8 @@ namespace matrix {
     template <typename T = double>
     Matrix<T> operator+ (const Matrix<T> &first, const Matrix<T> &second)  // overload for fun
     {
-        if (first.getNCols () != second.getNCols () || first.getNRows () != second.getNRows ()) {
-            std::cout << "I can't add these matrix because their size isn't equal" << std::endl;
-            return Matrix<T>{};
-        }
+        if (first.getNCols () != second.getNCols () || first.getNRows () != second.getNRows ())
+            throw MyException{"I can't add these matrix because their size isn't equal"};
 
         int nRow = first.getNRows ();
         int nCol = first.getNCols ();
