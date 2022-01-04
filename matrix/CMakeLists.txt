@@ -20,6 +20,8 @@ if(CLANG_FORMAT)
     )
 endif()
 
+add_subdirectory(googletest)
+
 set (EXEC_FILE "matrix")
 set (TEST_FILE "tests")
 
