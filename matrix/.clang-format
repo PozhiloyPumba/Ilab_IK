@@ -5,14 +5,15 @@ BasedOnStyle: Google
 Language: Cpp
 
 AllowShortBlocksOnASingleLine: Empty
-AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: true
 BinPackArguments: false
 BinPackParameters: false
 BreakConstructorInitializers: BeforeColon
+AllowAllConstructorInitializersOnNextLine: true
 BreakBeforeBraces: Stroustrup
 BreakBeforeTernaryOperators: false
 ColumnLimit: 0

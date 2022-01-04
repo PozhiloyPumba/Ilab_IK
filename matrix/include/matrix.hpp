@@ -32,6 +32,8 @@ namespace matrix {
             return maxRow;
         }
 
+        //-----------------------------------------------------------------------------------------------------
+
         int maxSubRowElem (T **rows, int *cols, int nRow)
         {
             int maxCol = nRow;
@@ -45,9 +47,133 @@ namespace matrix {
             return maxCol;
         }
 
+        //-----------------------------------------------------------------------------------------------------
+
+        int fakeSwapWithBiggest (T **fakeRows, int *fakeCols, int index, bool param)
+        {
+            int sign = 1;
+            int withMax;
+
+            if (param == true)
+                withMax = maxSubColElem (fakeRows, fakeCols, index);
+            else
+                withMax = maxSubRowElem (fakeRows, fakeCols, index);
+
+            if (withMax != index) {
+                sign = -1;
+                if (param == true)
+                    std::swap (fakeRows[index], fakeRows[withMax]);
+                else
+                    std::swap (fakeCols[index], fakeCols[withMax]);
+            }
+            return sign;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        T countDet (T **rows, int *cols, int sign)
+        {
+            T det = (sign == 1) ? rows[0][cols[0]] : -rows[0][cols[0]];
+            for (int i = 1; i < nCols_; ++i)
+                det *= rows[i][cols[i]];
+            return det;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        T det (std::false_type) const
+        {
+            Matrix<T> support = *this;
+            T det = support.fakeGauss ();
+
+            return det;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        T det (std::true_type) const
+        {
+            Matrix<double> support = *this;
+            double det = support.fakeGauss ();
+
+            return round (det);
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        int *createFakeCols ()
+        {
+            int *fakeCols = new int[nCols_];  // for fake swap cols
+            for (int i = 0; i < nCols_; ++i)
+                fakeCols[i] = i;
+
+            return fakeCols;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        T **createFakeRows ()
+        {
+            T **fakeRows = new T *[nRows_];  // for fake swap rows
+            for (int i = 0; i < nRows_; ++i)
+                fakeRows[i] = arr_ + nCols_ * i;
+
+            return fakeRows;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        struct Proxy final {
+            T *row_;
+            int nCols_;
+
+            Proxy (T *row, int nCols = -1)
+                : row_ (row),
+                  nCols_ (nCols)
+            {
+            }
+
+            //-----------------------------------------------------------------------------------------------------
+
+            const T &operator[] (int col) const  // in case of an error, it will return a reference to the first element
+            {
+                if (nCols_ == -1 || col >= nCols_) {
+                    std::cout << "there is no such element in the matrix" << std::endl;
+                    return row_[0];
+                }
+
+                return row_[col];
+            }
+
+            //-----------------------------------------------------------------------------------------------------
+
+            T &operator[] (int col)  // in case of an error, it will return a reference to the first element
+            {
+                if (nCols_ == -1 || col >= nCols_) {
+                    std::cout << "there is no such element in the matrix" << std::endl;
+                    return row_[0];
+                }
+
+                return row_[col];
+            }
+        };
+
+        //-----------------------------------------------------------------------------------------------------
+
     public:
-        Matrix (const int nRows, const int nCols, T val = T{})  // ctor
-            : nRows_ (nRows), nCols_ (nCols), arr_ (new T[nRows * nCols])
+        Matrix (const int nRows = 0, const int nCols = 0)  // ctor
+            : nRows_ (nRows),
+              nCols_ (nCols),
+              arr_ (new T[nRows * nCols])
+        {
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        Matrix (const int nRows, const int nCols, T val)  // ctor
+            : nRows_ (nRows),
+              nCols_ (nCols),
+              arr_ (new T[nRows * nCols])
         {
             std::fill_n (arr_, nRows_ * nCols_, val);
         }
@@ -55,7 +181,9 @@ namespace matrix {
         //-----------------------------------------------------------------------------------------------------
 
         Matrix (const Matrix<T> &other)
-            : nRows_ (other.nRows_), nCols_ (other.nCols_), arr_ (new T[other.nRows_ * other.nCols_])  // copy ctor
+            : nRows_ (other.nRows_),
+              nCols_ (other.nCols_),
+              arr_ (new T[other.nRows_ * other.nCols_])  // copy ctor
         {
             T *data = other.arr_;
             for (int i = 0, size = nRows_ * nCols_; i < size; ++i)
@@ -66,7 +194,9 @@ namespace matrix {
 
         template <typename otherT>
         Matrix (const Matrix<otherT> &other)
-            : nRows_ (other.getNRows ()), nCols_ (other.getNCols ()), arr_ (new T[nRows_ * nCols_])
+            : nRows_ (other.getNRows ()),
+              nCols_ (other.getNCols ()),
+              arr_ (new T[nRows_ * nCols_])  // copy ctor from other type
         {
             for (int i = 0; i < nRows_; ++i)
                 for (int j = 0; j < nCols_; ++j)
@@ -76,7 +206,9 @@ namespace matrix {
         //-----------------------------------------------------------------------------------------------------
 
         Matrix (Matrix<T> &&other) noexcept
-            : nRows_ (other.nRows_), nCols_ (other.nCols_), arr_ (other.arr_)  // move ctor
+            : nRows_ (other.nRows_),
+              nCols_ (other.nCols_),
+              arr_ (other.arr_)  // move ctor
         {
             other.arr_ = 0;
             other.nCols_ = 0;
@@ -105,7 +237,7 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        Matrix &operator= (Matrix<T> &&other) noexcept // move operator
+        Matrix &operator= (Matrix<T> &&other) noexcept  // move operator
         {
             if (this == &other)
                 return *this;
@@ -175,43 +307,6 @@ namespace matrix {
 
         //=====================================================================================================
 
-        struct Proxy final {
-            T *row_;
-            int nCols_;
-
-            Proxy (T *row, int nCols = -1)
-                : row_ (row),
-                  nCols_ (nCols)
-            {
-            }
-
-            //-----------------------------------------------------------------------------------------------------
-
-            const T &operator[] (int col) const  // in case of an error, it will return a reference to the first element
-            {
-                if (nCols_ == -1 || col >= nCols_) {
-                    std::cout << "there is no such element in the matrix" << std::endl;
-                    return row_[0];
-                }
-
-                return row_[col];
-            }
-
-            //-----------------------------------------------------------------------------------------------------
-
-            T &operator[] (int col)  // in case of an error, it will return a reference to the first element
-            {
-                if (nCols_ == -1 || col >= nCols_) {
-                    std::cout << "there is no such element in the matrix" << std::endl;
-                    return row_[0];
-                }
-
-                return row_[col];
-            }
-        };
-
-        //-----------------------------------------------------------------------------------------------------
-
         Proxy operator[] (const int row)  // in case of an error, it will return a reference to the first element
         {
             if (row >= nRows_)
@@ -255,94 +350,50 @@ namespace matrix {
 
         T det () const
         {
+            if (nRows_ != nCols_) {
+                std::cout << "matrix is not square! I don't know what are you want from me" << std::endl;
+                return T{};
+            }
             return det (std::is_integral<T> ());
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        T det (std::false_type) const
-        {
-            if (nRows_ != nCols_) {
-                std::cout << "matrix is not square! I don't know what are you want from me" << std::endl;
-                return T{};
-            }
-
-            Matrix<T> support = *this;
-            T det = support.gauss ();
-
-            return det;
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        T det (std::true_type) const
-        {
-            if (nRows_ != nCols_) {
-                std::cout << "matrix is not square! I don't know what are you want from me" << std::endl;
-                return 0;
-            }
-
-            Matrix<double> support = *this;
-            double det = support.gauss ();
-
-            return round (det);
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        T gauss ()
+        T fakeGauss ()
         {
             int sign = 1;
-            T **rows = new T *[nRows_];  // for fake swap rows
-            for (int i = 0; i < nRows_; ++i)
-                rows[i] = arr_ + nCols_ * i;
-
-            int *cols = new int[nCols_];  // for fake swap cols
-            for (int i = 0; i < nCols_; ++i)
-                cols[i] = i;
+            T **fakeRows = createFakeRows ();
+            int *fakeCols = createFakeCols ();
 
             for (int i = 0; i < nRows_; ++i) {
-                int rowWithMax = maxSubColElem (rows, cols, i);
+                sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, true);
+                sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, false);
 
-                if (rowWithMax != i) {
-                    std::swap (rows[i], rows[rowWithMax]);
-                    sign *= -1;
-                }
+                if (std::abs (fakeRows[i][fakeCols[i]]) <= EPSILON)
+                    return T{};
 
-                int colWithMax = maxSubRowElem (rows, cols, i);
-
-                if (colWithMax != i) {
-                    std::swap (cols[i], cols[colWithMax]);
-                    sign *= -1;
-                }
-
-                if (std::abs (rows[i][cols[i]]) <= EPSILON)
-                    return T{0};
-
-                T max = rows[i][cols[i]];
+                T max = fakeRows[i][fakeCols[i]];
 
                 for (int j = i + 1; j < nRows_; ++j) {
-                    T del = rows[j][cols[i]] / max;
+                    T del = fakeRows[j][fakeCols[i]] / max;
 
                     for (int k = i + 1; k < nCols_; ++k)  // we can not nullify the column that we will not pay attention to and thn k = i +1 (not i)
-                        rows[j][cols[k]] -= del * rows[i][cols[k]];
+                        fakeRows[j][fakeCols[k]] -= del * fakeRows[i][fakeCols[k]];
                 }
             }
 
-            T det = (sign == 1) ? rows[0][cols[0]] : -rows[0][cols[0]];
-            for (int i = 1; i < nCols_; ++i)
-                det *= rows[i][cols[i]];
+            T determinant = countDet (fakeRows, fakeCols, sign);
 
-            delete[] rows;
-            delete[] cols;
+            delete[] fakeRows;
+            delete[] fakeCols;
 
-            return det;
+            return determinant;
         }
     };
 
     //=====================================================================================================
 
-    template <typename T = float>
+    template <typename T = double>
     std::ostream &operator<< (std::ostream &out, Matrix<T> &matrix)
     {
         matrix.dump ();
@@ -351,12 +402,35 @@ namespace matrix {
 
     //-----------------------------------------------------------------------------------------------------
 
-    template <typename T = float>
+    template <typename T = double>
     std::istream &operator>> (std::istream &in, Matrix<T> &matrix)
     {
         matrix.input (in);
         return in;
     }
+
+    //-----------------------------------------------------------------------------------------------------
+
+    template <typename T = double>
+    Matrix<T> operator+ (const Matrix<T> &first, const Matrix<T> &second)  // overload for fun
+    {
+        if (first.getNCols () != second.getNCols () || first.getNRows () != second.getNRows ()) {
+            std::cout << "I can't add these matrix because their size isn't equal" << std::endl;
+            return Matrix<T>{};
+        }
+
+        int nRow = first.getNRows ();
+        int nCol = first.getNCols ();
+
+        Matrix<T> result (nRow, nCol);
+
+        for (int i = 0; i < nRow; ++i)
+            for (int j = 0; j < nCol; ++j)
+                result[i][j] = first[i][j] + second[i][j];
+
+        return result;
+    }
+
 }  // namespace matrix
 
 #endif
