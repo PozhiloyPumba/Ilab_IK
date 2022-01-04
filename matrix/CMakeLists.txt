@@ -48,6 +48,7 @@ target_link_libraries(${TEST_FILE} PRIVATE "${GTEST_LIBRARIES}" "pthread")
 target_include_directories(${TEST_FILE} PRIVATE headers "${GTEST_INCLUDE_DIRS}")
 
 add_compile_options(
+    -std=c++20 
     -Wall
     -Wextra
     -Wpedantic
@@ -65,6 +66,7 @@ add_compile_options(
 )
 
 set (COMPILER_SETTINGS
+    -std=c++20 
     -Wall
     -Wextra
     -Wpedantic

@@ -6,8 +6,8 @@
 
 namespace {
 
-    const double ACCURACY = 1E-5;
-    matrix::Matrix<double> inputMatrix (const char *filenameTests)
+    const double ACCURACY = 1E-4;
+    matrix::Matrix<int> inputMatrix (const char *filenameTests)
     {
         FILE *ftest;
 
@@ -21,7 +21,7 @@ namespace {
         std::cin >> size;
         assert (std::cin.good ());
 
-        matrix::Matrix<double> matr (size, size);
+        matrix::Matrix<int> matr (size, size);
 
         std::cin >> matr;
         assert (std::cin.good ());
@@ -38,7 +38,7 @@ namespace {
 
     void testDet (const char *filenameTests, const char *filenameAnsws)
     {
-        matrix::Matrix<double> testMatrix = inputMatrix (filenameTests);
+        matrix::Matrix<int> testMatrix = inputMatrix (filenameTests);
 
         FILE *ftest = freopen (filenameAnsws, "r", stdin);
         if (ftest == NULL) {
@@ -46,7 +46,7 @@ namespace {
             return;
         }
 
-        double rightAns;
+        int rightAns;
         std::cin >> rightAns;
 
         if (fclose (ftest)) {
@@ -54,7 +54,7 @@ namespace {
             return;
         }
 
-        ASSERT_EQ (rightAns - testMatrix.det () < ACCURACY, true);
+        ASSERT_EQ (rightAns, testMatrix.det ());
     }
 
     //-----------------------------------------------------------------------------------------------------

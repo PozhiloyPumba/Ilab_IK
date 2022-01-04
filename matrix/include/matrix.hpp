@@ -2,13 +2,14 @@
 #define __MATRIX_HPP__
 
 #include <complex>
+#include <concepts>
 #include <ctime>
 #include <iostream>
 
 namespace matrix {
     const double EPSILON = 10E-15;
 
-    template <typename T = float>
+    template <typename T = double>
     class Matrix final {
     private:
         int nRows_, nCols_;
@@ -16,14 +17,27 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        int maxSubColElem (T **rows, int nCol)
+        int maxSubColElem (T **rows, int *cols, int nCol)
         {
-            T *max = rows[nCol];
-            int maxCol = nCol;
+            T *max = rows[cols[nCol]];
+            int maxRow = nCol;
 
             for (int i = nCol + 1; i < nRows_; ++i) {
-                if (std::abs (max[nCol]) < std::abs (rows[i][nCol])) {
+                if (std::abs (max[cols[nCol]]) < std::abs (rows[i][cols[nCol]])) {
                     max = rows[i];
+                    maxRow = i;
+                }
+            }
+
+            return maxRow;
+        }
+
+        int maxSubRowElem (T **rows, int *cols, int nRow)
+        {
+            int maxCol = nRow;
+
+            for (int i = nRow + 1; i < nCols_; ++i) {
+                if (std::abs (rows[nRow][cols[maxCol]]) < std::abs (rows[nRow][cols[i]])) {
                     maxCol = i;
                 }
             }
@@ -91,7 +105,7 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        Matrix &operator= (Matrix<T> &&other)  // move operator
+        Matrix &operator= (Matrix<T> &&other) noexcept // move operator
         {
             if (this == &other)
                 return *this;
@@ -126,7 +140,7 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        static Matrix randomIntMatrix (int size, int det)
+        static Matrix<int> randomIntMatrix (int size, int det)
         {
             Matrix<int> rndMtrx (size, size);
 
@@ -161,7 +175,7 @@ namespace matrix {
 
         //=====================================================================================================
 
-        struct Proxy {
+        struct Proxy final {
             T *row_;
             int nCols_;
 
@@ -239,7 +253,40 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T det () const;
+        T det () const
+        {
+            return det (std::is_integral<T> ());
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        T det (std::false_type) const
+        {
+            if (nRows_ != nCols_) {
+                std::cout << "matrix is not square! I don't know what are you want from me" << std::endl;
+                return T{};
+            }
+
+            Matrix<T> support = *this;
+            T det = support.gauss ();
+
+            return det;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        T det (std::true_type) const
+        {
+            if (nRows_ != nCols_) {
+                std::cout << "matrix is not square! I don't know what are you want from me" << std::endl;
+                return 0;
+            }
+
+            Matrix<double> support = *this;
+            double det = support.gauss ();
+
+            return round (det);
+        }
 
         //-----------------------------------------------------------------------------------------------------
 
@@ -250,68 +297,48 @@ namespace matrix {
             for (int i = 0; i < nRows_; ++i)
                 rows[i] = arr_ + nCols_ * i;
 
+            int *cols = new int[nCols_];  // for fake swap cols
+            for (int i = 0; i < nCols_; ++i)
+                cols[i] = i;
+
             for (int i = 0; i < nRows_; ++i) {
-                int rowWithMax = maxSubColElem (rows, i);
+                int rowWithMax = maxSubColElem (rows, cols, i);
 
                 if (rowWithMax != i) {
                     std::swap (rows[i], rows[rowWithMax]);
                     sign *= -1;
                 }
 
-                if (std::abs (rows[i][i]) <= EPSILON)
+                int colWithMax = maxSubRowElem (rows, cols, i);
+
+                if (colWithMax != i) {
+                    std::swap (cols[i], cols[colWithMax]);
+                    sign *= -1;
+                }
+
+                if (std::abs (rows[i][cols[i]]) <= EPSILON)
                     return T{0};
 
-                T max = rows[i][i];
+                T max = rows[i][cols[i]];
 
                 for (int j = i + 1; j < nRows_; ++j) {
-                    T del = rows[j][i] / max;
+                    T del = rows[j][cols[i]] / max;
 
-                    for (int k = i; k < nCols_; ++k)
-                        rows[j][k] -= del * rows[i][k];
+                    for (int k = i + 1; k < nCols_; ++k)  // we can not nullify the column that we will not pay attention to and thn k = i +1 (not i)
+                        rows[j][cols[k]] -= del * rows[i][cols[k]];
                 }
             }
 
-            T det = (sign == 1) ? rows[0][0] : -rows[0][0];
+            T det = (sign == 1) ? rows[0][cols[0]] : -rows[0][cols[0]];
             for (int i = 1; i < nCols_; ++i)
-                det *= rows[i][i];
+                det *= rows[i][cols[i]];
 
             delete[] rows;
+            delete[] cols;
 
             return det;
         }
     };
-
-    //-----------------------------------------------------------------------------------------------------
-
-    template <>
-    int Matrix<int>::det () const
-    {
-        if (nRows_ != nCols_) {
-            std::cout << "matrix is not square! I don't know what are you want from me" << std::endl;
-            return 0;
-        }
-
-        Matrix<double> support = *this;
-        int det = support.gauss ();
-
-        return det;
-    }
-
-    //-----------------------------------------------------------------------------------------------------
-
-    template <typename T>
-    T Matrix<T>::det () const
-    {
-        if (nRows_ != nCols_) {
-            std::cout << "matrix is not square! I don't know what are you want from me" << std::endl;
-            return T{};
-        }
-
-        Matrix<T> support = *this;
-        T det = support.gauss ();
-
-        return det;
-    }
 
     //=====================================================================================================
 
