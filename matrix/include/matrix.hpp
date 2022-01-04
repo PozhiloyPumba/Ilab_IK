@@ -9,24 +9,20 @@
 namespace matrix {
     const double EPSILON = 10E-15;
 
-    class MyException {
-    private:
-        std::string error_;
-
-    public:
-        MyException (std::string error)
-            : error_ (error)
-        {
-        }
-
-        const char *what () const { return error_.c_str (); }
-    };
-
     template <typename T = double>
     class Matrix final {
     private:
         int nRows_, nCols_;
         T *arr_;
+
+        //-----------------------------------------------------------------------------------------------------
+
+        void nullify () noexcept
+        {
+            arr_ = nullptr;
+            nCols_ = 0;
+            nRows_ = 0;
+        }
 
         //-----------------------------------------------------------------------------------------------------
 
@@ -125,7 +121,7 @@ namespace matrix {
             const T &operator[] (const int col) const
             {
                 if (col >= proxynCols_ || col < 0)
-                    throw MyException{"you tried to get data from nonexistent column"};
+                    throw std::length_error{"you tried to get data from nonexistent column"};
 
                 return row_[col];
             }
@@ -135,7 +131,7 @@ namespace matrix {
             T &operator[] (const int col)
             {
                 if (col >= proxynCols_ || col < 0)
-                    throw MyException{"you tried to get data from nonexistent column"};
+                    throw std::length_error{"you tried to get data from nonexistent column"};
 
                 return row_[col];
             }
@@ -196,26 +192,32 @@ namespace matrix {
 
     public:
         Matrix (const int nRows = 0, const int nCols = 0)  // ctor
-            : nRows_ (nRows),
+        try : nRows_ (nRows),
               nCols_ (nCols),
-              arr_ (new T[nRows * nCols])
-        {
+              arr_ (new T[nRows * nCols]) {
+        }
+        catch (...) {
+            nullify ();
+            throw;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
         Matrix (const int nRows, const int nCols, T val)  // ctor
-            : nRows_ (nRows),
+        try : nRows_ (nRows),
               nCols_ (nCols),
-              arr_ (new T[nRows * nCols])
-        {
+              arr_ (new T[nRows * nCols]) {
             std::fill_n (arr_, nRows_ * nCols_, val);
+        }
+        catch (...) {
+            nullify ();
+            throw;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
         Matrix (const Matrix<T> &other)
-            : nRows_ (other.nRows_),
+        try : nRows_ (other.nRows_),
               nCols_ (other.nCols_),
               arr_ (new T[other.nRows_ * other.nCols_])  // copy ctor
         {
@@ -223,18 +225,26 @@ namespace matrix {
             for (int i = 0, size = nRows_ * nCols_; i < size; ++i)
                 arr_[i] = data[i];
         }
+        catch (...) {
+            nullify ();
+            throw;
+        }
 
         //-----------------------------------------------------------------------------------------------------
 
         template <typename otherT>
         Matrix (const Matrix<otherT> &other)
-            : nRows_ (other.getNRows ()),
+        try : nRows_ (other.getNRows ()),
               nCols_ (other.getNCols ()),
               arr_ (new T[nRows_ * nCols_])  // copy ctor from other type
         {
             for (int i = 0; i < nRows_; ++i)
                 for (int j = 0; j < nCols_; ++j)
                     arr_[i * nCols_ + j] = other[i][j];
+        }
+        catch (...) {
+            nullify ();
+            throw;
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -244,9 +254,7 @@ namespace matrix {
               nCols_ (other.nCols_),
               arr_ (other.arr_)  // move ctor
         {
-            other.arr_ = 0;
-            other.nCols_ = 0;
-            other.nRows_ = 0;
+            other.nullify ();
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -258,7 +266,13 @@ namespace matrix {
 
             delete[] arr_;
 
-            arr_ = new T[other.nRows_ * other.nCols_];
+            try {
+                arr_ = new T[other.nRows_ * other.nCols_];
+            }
+            catch (...) {
+                nullify ();
+                throw;
+            }
             nRows_ = other.nRows_;
             nCols_ = other.nCols_;
 
@@ -344,7 +358,7 @@ namespace matrix {
         Proxy operator[] (const int row)
         {
             if (row >= nRows_ || row < 0)
-                throw MyException{"you tried to get data from nonexistent row"};
+                throw std::length_error{"you tried to get data from nonexistent row"};
 
             return Proxy (arr_ + nCols_ * row, nCols_);
         }
@@ -354,8 +368,8 @@ namespace matrix {
         const Proxy operator[] (const int row) const
         {
             if (row >= nRows_ || row < 0)
-                throw MyException{"you tried to get data from nonexistent row"};
-
+                throw std::length_error{"you tried to get data from nonexistent row"};
+            
             return Proxy (arr_ + nCols_ * row, nCols_);
         }
 
@@ -385,7 +399,7 @@ namespace matrix {
         T det () const
         {
             if (nRows_ != nCols_)
-                throw MyException{"matrix is not square! I don't know what are you want from me"};
+                throw std::logic_error{"matrix is not square! I don't know what are you want from me"};
 
             return det (std::is_integral<T> ());
         }
@@ -415,7 +429,7 @@ namespace matrix {
     Matrix<T> operator+ (const Matrix<T> &first, const Matrix<T> &second)  // overload for fun
     {
         if (first.getNCols () != second.getNCols () || first.getNRows () != second.getNRows ())
-            throw MyException{"I can't add these matrix because their size isn't equal"};
+            throw std::logic_error{"I can't add these matrix because their size isn't equal"};
 
         int nRow = first.getNRows ();
         int nCol = first.getNCols ();
