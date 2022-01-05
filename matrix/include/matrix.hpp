@@ -169,8 +169,11 @@ namespace matrix {
                 sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, true);
                 sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, false);
 
-                if (std::abs (fakeRows[i][fakeCols[i]]) <= EPSILON)
+                if (std::abs (fakeRows[i][fakeCols[i]]) <= EPSILON) {
+                    delete[] fakeRows;
+                    delete[] fakeCols;
                     return T{};
+                }
 
                 T max = fakeRows[i][fakeCols[i]];
 
