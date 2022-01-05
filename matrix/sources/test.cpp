@@ -162,9 +162,16 @@ TEST (detTest, test7)
 
 //-----------------------------------------------------------------------------------------------------
 
-TEST (detCmplxTest, test8)
+TEST (detCmplxTest, test1)
 {
-    testCmplxDet ("../tests/complexMatrixTest.txt", "../tests/answers/ansComplex.txt");
+    testCmplxDet ("../tests/complexMatrixTest1.txt", "../tests/answers/ansComplex1.txt");
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (detCmplxTest, test2)
+{
+    testCmplxDet ("../tests/complexMatrixTest2.txt", "../tests/answers/ansComplex2.txt");
 }
 
 //=====================================================================================================

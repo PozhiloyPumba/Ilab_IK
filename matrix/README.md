@@ -1,5 +1,8 @@
 # **Matrix**
 
+![Screenshot](pics/cat.jpg)
+
+---
 ## How to build my project:
 ```
 $ git submodule init
