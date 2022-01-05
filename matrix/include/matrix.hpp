@@ -327,12 +327,11 @@ namespace matrix {
         {
             Matrix<int> rndMtrx (size, size);
 
-            std::srand (time (nullptr));
             for (int i = 0; i < size - 1; ++i) {
                 rndMtrx[i][i] = 1;
 
                 for (int j = i + 1; j < size; ++j)
-                    rndMtrx[i][j] = rand () % (2 * det) - det;
+                    rndMtrx[i][j] = rand () % (2 * std::abs(det)) - std::abs(det);
             }
             rndMtrx[size - 1][size - 1] = det;
 
@@ -406,6 +405,19 @@ namespace matrix {
 
             return det (std::is_integral<T> ());
         }
+
+        Matrix &transpose()
+        {
+            Matrix<T> trans (nCols_, nRows_);
+
+            for (int i = 0; i < nRows_; ++i)
+                for (int j = 0; j < nCols_; ++j)
+                    trans[j][i] = (*this)[i][j];
+
+            std::swap(trans, *this);
+
+            return *this;
+        }
     };
 
     //=====================================================================================================
@@ -445,6 +457,24 @@ namespace matrix {
 
         return result;
     }
+
+    //-----------------------------------------------------------------------------------------------------
+
+    template <typename T = double>
+    Matrix<T> operator~ (const Matrix<T> &matrix)
+    {
+        Matrix<T> other = matrix;
+
+        return other.transpose ();
+    }
+
+    //-----------------------------------------------------------------------------------------------------
+
+    // template <typename T = double>
+    // Matrix<T> operator* (const Matrix<T> &first, const Matrix<T> &second)
+    // {
+    //     return first.mul(second);
+    // }
 
 }  // namespace matrix
 
