@@ -377,13 +377,13 @@ namespace matrix {
 
         //=====================================================================================================
 
-        void dump () const
+        void dump (std::ostream &out) const
         {
             for (int i = 0; i < nRows_; ++i) {
                 for (int j = 0; j < nCols_; ++j)
-                    std::cout << arr_[nCols_ * i + j] << " ";
+                    out << arr_[nCols_ * i + j] << " ";
 
-                std::cout << std::endl;
+                out << std::endl;
             }
         }
 
@@ -425,7 +425,7 @@ namespace matrix {
     template <typename T = double>
     std::ostream &operator<< (std::ostream &out, Matrix<T> &matrix)
     {
-        matrix.dump ();
+        matrix.dump (out);
         return out;
     }
 

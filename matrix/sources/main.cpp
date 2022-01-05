@@ -11,6 +11,7 @@ int main ()
     matrix::Matrix<int> matr (n, n);
 
     std::cin >> matr;
+    
     std::cout << matr.det () << std::endl;
 
     return 0;
