@@ -423,7 +423,7 @@ namespace matrix {
     //=====================================================================================================
 
     template <typename T = double>
-    std::ostream &operator<< (std::ostream &out, Matrix<T> &matrix)
+    std::ostream &operator<< (std::ostream &out, const Matrix<T> &matrix)
     {
         matrix.dump (out);
         return out;
@@ -467,14 +467,6 @@ namespace matrix {
 
         return other.transpose ();
     }
-
-    //-----------------------------------------------------------------------------------------------------
-
-    // template <typename T = double>
-    // Matrix<T> operator* (const Matrix<T> &first, const Matrix<T> &second)
-    // {
-    //     return first.mul(second);
-    // }
 
 }  // namespace matrix
 
