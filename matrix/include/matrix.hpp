@@ -193,6 +193,30 @@ namespace matrix {
             return determinant;
         }
 
+        //-----------------------------------------------------------------------------------------------------
+
+        Matrix &mul (const Matrix<T> &other)  // multiply selector
+        {
+            if (nCols_ != other.nRows_)
+                throw std::logic_error{"The number of columns of the first matrix does not match the number of rows of the second!"};
+
+            Matrix<T> temporary_m (nRows_, other.nCols_);
+            Matrix<T> B = other;
+
+            B.transpose ();
+            for (int i = 0; i < nRows_; ++i) {
+                for (int j = 0; j < other.nCols_; ++j) {
+                    T temporary_sum = T{};
+                    for (int k = 0; k < other.nRows_; ++k)
+                        temporary_sum += (*this)[i][k] * B[j][k];
+                    temporary_m[i][j] = temporary_sum;
+                }
+            }
+
+            std::swap (temporary_m, *this);
+            return *this;
+        }
+
     public:
         Matrix (const int nRows = 0, const int nCols = 0)  // ctor
         try : nRows_ (nRows),
@@ -331,7 +355,7 @@ namespace matrix {
                 rndMtrx[i][i] = 1;
 
                 for (int j = i + 1; j < size; ++j)
-                    rndMtrx[i][j] = rand () % (2 * std::abs(det)) - std::abs(det);
+                    rndMtrx[i][j] = rand () % (2 * std::abs (det)) - std::abs (det);
             }
             rndMtrx[size - 1][size - 1] = det;
 
@@ -371,7 +395,7 @@ namespace matrix {
         {
             if (row >= nRows_ || row < 0)
                 throw std::length_error{"you tried to get data from nonexistent row"};
-            
+
             return Proxy (arr_ + nCols_ * row, nCols_);
         }
 
@@ -406,7 +430,9 @@ namespace matrix {
             return det (std::is_integral<T> ());
         }
 
-        Matrix &transpose()
+        //-----------------------------------------------------------------------------------------------------
+
+        Matrix &transpose ()
         {
             Matrix<T> trans (nCols_, nRows_);
 
@@ -414,9 +440,45 @@ namespace matrix {
                 for (int j = 0; j < nCols_; ++j)
                     trans[j][i] = (*this)[i][j];
 
-            std::swap(trans, *this);
+            std::swap (trans, *this);
 
             return *this;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        Matrix &operator*= (const Matrix<T> &other)
+        {
+            return mul (other);
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        Matrix &operator+= (const Matrix<T> &other)
+        {
+            if (getNCols () != other.getNCols () || getNRows () != other.getNRows ())
+                throw std::logic_error{"I can't add these matrix because their size isn't equal"};
+
+            for (int i = 0; i < nRows_; ++i)
+                for (int j = 0; j < nCols_; ++j)
+                    (*this)[i][j] += other[i][j];
+
+            return (*this);
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        template <typename delType>
+        Matrix &operator/= (delType del)
+        {
+            if (del == delType{})
+                throw std::logic_error{"Floating point exception\n"};
+
+            for (int i = 0; i < nRows_; ++i)
+                for (int j = 0; j < nCols_; ++j)
+                    (*this)[i][j] /= del;
+
+            return (*this);
         }
     };
 
@@ -443,19 +505,9 @@ namespace matrix {
     template <typename T = double>
     Matrix<T> operator+ (const Matrix<T> &first, const Matrix<T> &second)  // overload for fun
     {
-        if (first.getNCols () != second.getNCols () || first.getNRows () != second.getNRows ())
-            throw std::logic_error{"I can't add these matrix because their size isn't equal"};
+        Matrix<T> result (first);
 
-        int nRow = first.getNRows ();
-        int nCol = first.getNCols ();
-
-        Matrix<T> result (nRow, nCol);
-
-        for (int i = 0; i < nRow; ++i)
-            for (int j = 0; j < nCol; ++j)
-                result[i][j] = first[i][j] + second[i][j];
-
-        return result;
+        return result += second;
     }
 
     //-----------------------------------------------------------------------------------------------------
@@ -463,9 +515,18 @@ namespace matrix {
     template <typename T = double>
     Matrix<T> operator~ (const Matrix<T> &matrix)
     {
-        Matrix<T> other = matrix;
+        Matrix<T> other (matrix);
 
         return other.transpose ();
+    }
+
+    //-----------------------------------------------------------------------------------------------------
+
+    template <typename T = double>
+    Matrix<T> operator* (const Matrix<T> &first, const Matrix<T> &second)
+    {
+        Matrix<T> copy = first;
+        return copy *= second;
     }
 
 }  // namespace matrix
