@@ -1,10 +1,12 @@
 #ifndef MATRIX_HPP_
 #define MATRIX_HPP_
 
+#include <chrono>
 #include <complex>
 #include <cstring>
-#include <ctime>
 #include <iostream>
+#include <memory>
+#include <random>
 
 namespace matrix {
     const double EPSILON = 10E-15;
@@ -12,7 +14,7 @@ namespace matrix {
     template <typename T = double>
     class Matrix final {
     private:
-        int nRows_, nCols_;
+        size_t nRows_, nCols_;
         T *arr_;
 
         //-----------------------------------------------------------------------------------------------------
@@ -26,11 +28,11 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        int maxSubColElem (T **rows, const int *cols, const int nCol) const noexcept
+        size_t maxSubColElem (std::unique_ptr<T *[]> &rows, std::unique_ptr<int[]> &cols, const size_t nCol) const noexcept
         {
-            int maxRow = nCol;
+            size_t maxRow = nCol;
 
-            for (int i = nCol + 1; i < nRows_; ++i)
+            for (size_t i = nCol + 1; i < nRows_; ++i)
                 if (std::abs (rows[maxRow][cols[nCol]]) < std::abs (rows[i][cols[nCol]]))
                     maxRow = i;
 
@@ -39,11 +41,11 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        int maxSubRowElem (T **rows, const int *cols, const int nRow) const noexcept
+        size_t maxSubRowElem (std::unique_ptr<T *[]> &rows, std::unique_ptr<int[]> &cols, const size_t nRow) const noexcept
         {
-            int maxCol = nRow;
+            size_t maxCol = nRow;
 
-            for (int i = nRow + 1; i < nCols_; ++i)
+            for (size_t i = nRow + 1; i < nCols_; ++i)
                 if (std::abs (rows[nRow][cols[maxCol]]) < std::abs (rows[nRow][cols[i]]))
                     maxCol = i;
 
@@ -52,10 +54,10 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        int fakeSwapWithBiggest (T **fakeRows, int *fakeCols, const int index, const bool param) const noexcept
+        int fakeSwapWithBiggest (std::unique_ptr<T *[]> &fakeRows, std::unique_ptr<int[]> &fakeCols, const size_t index, const bool param) const noexcept
         {
             int sign = 1;
-            int withMax;
+            size_t withMax;
 
             if (param)
                 withMax = maxSubColElem (fakeRows, fakeCols, index);
@@ -74,20 +76,20 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T countDet (T **rows, const int *cols, const int sign) const noexcept
+        T countDet (std::unique_ptr<T *[]> &rows, std::unique_ptr<int[]> &cols, const int sign) const
         {
             T det = rows[0][cols[0]];
-            for (int i = 1; i < nCols_; ++i)
+            for (size_t i = 1; i < nCols_; ++i)
                 det *= rows[i][cols[i]];
             return (sign == 1) ? det : -det;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        int *createFakeCols () const
+        std::unique_ptr<int[]> createFakeCols () const
         {
-            int *fakeCols = new int[nCols_];  // for fake swap cols
-            for (int i = 0; i < nCols_; ++i)
+            std::unique_ptr<int[]> fakeCols (new int[nCols_]);  // for fake swap cols
+            for (size_t i = 0; i < nCols_; ++i)
                 fakeCols[i] = i;
 
             return fakeCols;
@@ -95,10 +97,9 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T **createFakeRows () const
-        {
-            T **fakeRows = new T *[nRows_];  // for fake swap rows
-            for (int i = 0; i < nRows_; ++i)
+        std::unique_ptr<T *[]> createFakeRows () const {
+            std::unique_ptr<T *[]> fakeRows (new T *[nRows_]);  // for fake swap rows
+            for (size_t i = 0; i < nRows_; ++i)
                 fakeRows[i] = arr_ + nCols_ * i;
 
             return fakeRows;
@@ -108,9 +109,9 @@ namespace matrix {
 
         struct Proxy final {
             T *row_;
-            int proxynCols_;
+            size_t proxynCols_;
 
-            Proxy (T *row, int nCols)
+            Proxy (T *row, size_t nCols)
                 : row_ (row),
                   proxynCols_ (nCols)
             {
@@ -118,7 +119,7 @@ namespace matrix {
 
             //-----------------------------------------------------------------------------------------------------
 
-            const T &operator[] (const int col) const
+            const T &operator[] (const size_t col) const
             {
                 if (col >= proxynCols_ || col < 0)
                     throw std::length_error{"you tried to get data from nonexistent column"};
@@ -128,7 +129,7 @@ namespace matrix {
 
             //-----------------------------------------------------------------------------------------------------
 
-            T &operator[] (const int col)
+            T &operator[] (const size_t col)
             {
                 if (col >= proxynCols_ || col < 0)
                     throw std::length_error{"you tried to get data from nonexistent column"};
@@ -141,7 +142,7 @@ namespace matrix {
 
         T det (std::false_type) const
         {
-            Matrix<T> support = *this;
+            Matrix<T> support (*this);
             T det = support.fakeGauss ();
 
             return det;
@@ -151,7 +152,7 @@ namespace matrix {
 
         T det (std::true_type) const
         {
-            Matrix<double> support = *this;
+            Matrix<double> support (*this);
             double det = support.det ();
 
             return round (det);
@@ -162,33 +163,27 @@ namespace matrix {
         T fakeGauss ()
         {
             int sign = 1;
-            T **fakeRows = createFakeRows ();
-            int *fakeCols = createFakeCols ();
+            std::unique_ptr<T *[]> fakeRows = createFakeRows ();
+            std::unique_ptr<int[]> fakeCols = createFakeCols ();
 
-            for (int i = 0; i < nRows_; ++i) {
+            for (size_t i = 0; i < nRows_; ++i) {
                 sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, true);
                 sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, false);
 
-                if (std::abs (fakeRows[i][fakeCols[i]]) <= EPSILON) {
-                    delete[] fakeRows;
-                    delete[] fakeCols;
+                if (std::abs (fakeRows[i][fakeCols[i]]) <= EPSILON)
                     return T{};
-                }
 
                 T max = fakeRows[i][fakeCols[i]];
 
-                for (int j = i + 1; j < nRows_; ++j) {
+                for (size_t j = i + 1; j < nRows_; ++j) {
                     T del = fakeRows[j][fakeCols[i]] / max;
 
-                    for (int k = i + 1; k < nCols_; ++k)  // we can not nullify the column that we will not pay attention to and thn k = i +1 (not i)
+                    for (size_t k = i + 1; k < nCols_; ++k)  // we can not nullify the column that we will not pay attention to and thn k = i + 1 (not i)
                         fakeRows[j][fakeCols[k]] -= del * fakeRows[i][fakeCols[k]];
                 }
             }
 
             T determinant = countDet (fakeRows, fakeCols, sign);
-
-            delete[] fakeRows;
-            delete[] fakeCols;
 
             return determinant;
         }
@@ -201,14 +196,15 @@ namespace matrix {
                 throw std::logic_error{"The number of columns of the first matrix does not match the number of rows of the second!"};
 
             Matrix<T> temporary_m (nRows_, other.nCols_);
-            Matrix<T> B = other;
+            Matrix<T> B (other);
 
             B.transpose ();
+            T *otherArr = B.arr_;
             for (int i = 0; i < nRows_; ++i) {
                 for (int j = 0; j < other.nCols_; ++j) {
                     T temporary_sum = T{};
                     for (int k = 0; k < other.nRows_; ++k)
-                        temporary_sum += (*this)[i][k] * B[j][k];
+                        temporary_sum += arr_[i * nCols_ + j] * otherArr[j * other.nCols_ + k];
                     temporary_m[i][j] = temporary_sum;
                 }
             }
@@ -217,61 +213,107 @@ namespace matrix {
             return *this;
         }
 
-    public:
-        Matrix (const int nRows = 0, const int nCols = 0)  // ctor
-        try : nRows_ (nRows),
-              nCols_ (nCols),
-              arr_ (new T[nRows * nCols]) {
+        //-----------------------------------------------------------------------------------------------------
+
+        template <typename distrType>
+        static Matrix<T> rndMatr (const size_t size, const int det)
+        {
+            const int maxCoef = 5;  // I don't want big coef
+            unsigned seed = std::chrono::system_clock::now ().time_since_epoch ().count ();
+            std::mt19937 generator (seed);
+
+            int absDet = std::abs (det);
+            distrType randUpperTriangle (-absDet, absDet);
+
+            Matrix<T> rndMtrx (size, size);
+
+            for (size_t i = 0; i < size - 1; ++i) {
+                rndMtrx[i][i] = 1;
+
+                for (size_t j = i + 1; j < size; ++j)
+                    rndMtrx[i][j] = randUpperTriangle (generator);
+            }
+
+            rndMtrx[size - 1][size - 1] = det;
+
+            distrType coefGen (-maxCoef, maxCoef);  // I don't want big coef
+            int randCoef;
+
+            for (size_t i = 1; i < size; ++i) {
+                randCoef = coefGen (generator);
+
+                for (size_t j = 0; j < size; ++j)
+                    rndMtrx[i][j] += randCoef * rndMtrx[0][j];
+            }
+
+            for (size_t i = 0; i < size - 1; ++i) {
+                randCoef = coefGen (generator);
+
+                for (size_t j = 0; j < size; ++j)
+                    rndMtrx[j][i] += randCoef * rndMtrx[j][size - 1];
+            }
+
+            return rndMtrx;
         }
-        catch (...) {
-            nullify ();
-            throw;
+
+    public:
+        Matrix (const size_t nRows = 0, const size_t nCols = 0)  // ctor
+            : nRows_ (nRows),
+              nCols_ (nCols),
+              arr_ (new T[nRows * nCols])
+        {
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        Matrix (const int nRows, const int nCols, T val)  // ctor
-        try : nRows_ (nRows),
+        Matrix (const size_t nRows, const size_t nCols, T val)  // ctor
+            : nRows_ (nRows),
               nCols_ (nCols),
-              arr_ (new T[nRows * nCols]) {
-            std::fill_n (arr_, nRows_ * nCols_, val);
-        }
-        catch (...) {
-            nullify ();
-            throw;
+              arr_ (new T[nRows * nCols])
+        {
+            try {
+                std::fill_n (arr_, nRows_ * nCols_, val);
+            }
+            catch (...) {
+                delete[] arr_;
+            }
         }
 
         //-----------------------------------------------------------------------------------------------------
 
         Matrix (const Matrix<T> &other)
-        try : nRows_ (other.nRows_),
+            : nRows_ (other.nRows_),
               nCols_ (other.nCols_),
-              arr_ (new T[other.nRows_ * other.nCols_])  // copy ctor
+              arr_ (new T[nRows_ * nCols_])  // copy ctor
         {
-            T *data = other.arr_;
-            for (int i = 0, size = nRows_ * nCols_; i < size; ++i)
-                arr_[i] = data[i];
-        }
-        catch (...) {
-            nullify ();
-            throw;
+            try {
+                T *data = other.arr_;
+                for (int i = 0, size = nRows_ * nCols_; i < size; ++i)
+                    arr_[i] = data[i];
+            }
+            catch (...) {
+                delete[] arr_;
+                throw;
+            }
         }
 
         //-----------------------------------------------------------------------------------------------------
 
         template <typename otherT>
         Matrix (const Matrix<otherT> &other)
-        try : nRows_ (other.getNRows ()),
+            : nRows_ (other.getNRows ()),
               nCols_ (other.getNCols ()),
               arr_ (new T[nRows_ * nCols_])  // copy ctor from other type
         {
-            for (int i = 0; i < nRows_; ++i)
-                for (int j = 0; j < nCols_; ++j)
-                    arr_[i * nCols_ + j] = other[i][j];
-        }
-        catch (...) {
-            nullify ();
-            throw;
+            try {
+                for (size_t i = 0; i < nRows_; ++i)
+                    for (size_t j = 0; j < nCols_; ++j)
+                        arr_[i * nCols_ + j] = other[i][j];
+            }
+            catch (...) {
+                delete[] arr_;
+                throw;
+            }
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -304,8 +346,16 @@ namespace matrix {
             nCols_ = other.nCols_;
 
             T *data = other.arr_;
-            for (int i = 0, size = nRows_ * nCols_; i < size; ++i)
-                arr_[i] = data[i];
+
+            try {
+                for (int i = 0, size = nRows_ * nCols_; i < size; ++i)
+                    arr_[i] = data[i];
+            }
+            catch (...) {
+                delete[] arr_;
+                nullify ();
+                throw;
+            }
 
             return *this;
         }
@@ -333,55 +383,33 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        int getNRows () const noexcept
+        size_t getNRows () const noexcept
         {
             return nRows_;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        int getNCols () const noexcept
+        size_t getNCols () const noexcept
         {
             return nCols_;
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        static Matrix<int> randomIntMatrix (const int size, const int det)
+        static Matrix<T> randomMatrix (const size_t size, const int det)
         {
-            Matrix<int> rndMtrx (size, size);
+            static_assert (std::is_fundamental<T> ());
 
-            for (int i = 0; i < size - 1; ++i) {
-                rndMtrx[i][i] = 1;
-
-                for (int j = i + 1; j < size; ++j)
-                    rndMtrx[i][j] = rand () % (2 * std::abs (det)) - std::abs (det);
-            }
-            rndMtrx[size - 1][size - 1] = det;
-
-            int randCoef;
-            for (int i = 1; i < size; ++i) {
-                while (!(randCoef = rand () % 11 - 5))  // because I want randCoef != 0
-                    ;
-
-                for (int j = 0; j < size; ++j)
-                    rndMtrx[i][j] += randCoef * rndMtrx[0][j];
-            }
-
-            for (int i = 0; i < size - 1; ++i) {
-                while (!(randCoef = rand () % 11 - 5))  // because I want randCoef != 0
-                    ;
-
-                for (int j = 0; j < size; ++j)
-                    rndMtrx[j][i] += randCoef * rndMtrx[j][size - 1];
-            }
-
-            return rndMtrx;
+            if constexpr (std::is_integral<T> ())
+                return rndMatr<std::uniform_int_distribution<T>> (size, det);
+            else
+                return rndMatr<std::uniform_real_distribution<T>> (size, det);
         }
 
         //=====================================================================================================
 
-        Proxy operator[] (const int row)
+        Proxy operator[] (const size_t row)
         {
             if (row >= nRows_ || row < 0)
                 throw std::length_error{"you tried to get data from nonexistent row"};
@@ -391,7 +419,7 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        const Proxy operator[] (const int row) const
+        const Proxy operator[] (const size_t row) const
         {
             if (row >= nRows_ || row < 0)
                 throw std::length_error{"you tried to get data from nonexistent row"};
@@ -403,8 +431,8 @@ namespace matrix {
 
         void dump (std::ostream &out) const
         {
-            for (int i = 0; i < nRows_; ++i) {
-                for (int j = 0; j < nCols_; ++j)
+            for (size_t i = 0; i < nRows_; ++i) {
+                for (size_t j = 0; j < nCols_; ++j)
                     out << arr_[nCols_ * i + j] << " ";
 
                 out << std::endl;
@@ -415,9 +443,8 @@ namespace matrix {
 
         void input (std::istream &in)
         {
-            for (int i = 0; i < nRows_; ++i)
-                for (int j = 0; j < nCols_; ++j)
-                    in >> (*this)[i][j];
+            for (size_t i = 0, size = nRows_ * nCols_; i < size; ++i)
+                in >> arr_[i];
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -435,10 +462,11 @@ namespace matrix {
         Matrix &transpose ()
         {
             Matrix<T> trans (nCols_, nRows_);
+            T *transArr = trans.arr_;
 
             for (int i = 0; i < nRows_; ++i)
                 for (int j = 0; j < nCols_; ++j)
-                    trans[j][i] = (*this)[i][j];
+                    transArr[j * nRows_ + i] = arr_[i * nCols_ + j];
 
             std::swap (trans, *this);
 
@@ -459,9 +487,10 @@ namespace matrix {
             if (getNCols () != other.getNCols () || getNRows () != other.getNRows ())
                 throw std::logic_error{"I can't add these matrix because their size isn't equal"};
 
+            T *otherArr = other.arr_;
             for (int i = 0; i < nRows_; ++i)
                 for (int j = 0; j < nCols_; ++j)
-                    (*this)[i][j] += other[i][j];
+                    arr_[i * nCols_ + j] += otherArr[i * nCols_ + j];
 
             return (*this);
         }
@@ -476,7 +505,7 @@ namespace matrix {
 
             for (int i = 0; i < nRows_; ++i)
                 for (int j = 0; j < nCols_; ++j)
-                    (*this)[i][j] /= del;
+                    arr_[i * nCols_ + j] /= del;
 
             return (*this);
         }
@@ -525,7 +554,7 @@ namespace matrix {
     template <typename T = double>
     Matrix<T> operator* (const Matrix<T> &first, const Matrix<T> &second)
     {
-        Matrix<T> copy = first;
+        Matrix<T> copy (first);
         return copy *= second;
     }
 
