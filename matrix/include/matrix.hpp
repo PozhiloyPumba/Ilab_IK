@@ -7,9 +7,12 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <algorithm>
+#include <iterator>
 
 namespace matrix {
     const double EPSILON = 10E-15;
+    const int maxCoefConst = 5;
 
     template <typename T = double>
     class Matrix final {
@@ -121,7 +124,7 @@ namespace matrix {
 
             const T &operator[] (const size_t col) const
             {
-                if (col >= proxynCols_ || col < 0)
+                if (col >= proxynCols_)
                     throw std::length_error{"you tried to get data from nonexistent column"};
 
                 return row_[col];
@@ -131,7 +134,7 @@ namespace matrix {
 
             T &operator[] (const size_t col)
             {
-                if (col >= proxynCols_ || col < 0)
+                if (col >= proxynCols_)
                     throw std::length_error{"you tried to get data from nonexistent column"};
 
                 return row_[col];
@@ -163,8 +166,8 @@ namespace matrix {
         T fakeGauss ()
         {
             int sign = 1;
-            std::unique_ptr<T *[]> fakeRows = createFakeRows ();
-            std::unique_ptr<int[]> fakeCols = createFakeCols ();
+            std::unique_ptr<T *[]> fakeRows = createFakeRows ();    //TODO: unique_ptr -> vector
+            std::unique_ptr<int[]> fakeCols = createFakeCols ();    //TODO: unique_ptr -> vector
 
             for (size_t i = 0; i < nRows_; ++i) {
                 sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, true);
@@ -204,7 +207,7 @@ namespace matrix {
                 for (int j = 0; j < other.nCols_; ++j) {
                     T temporary_sum = T{};
                     for (int k = 0; k < other.nRows_; ++k)
-                        temporary_sum += arr_[i * nCols_ + j] * otherArr[j * other.nCols_ + k];
+                        temporary_sum += arr_[i * nCols_ + k] * otherArr[j * B.nCols_ + k];
                     temporary_m[i][j] = temporary_sum;
                 }
             }
@@ -218,7 +221,7 @@ namespace matrix {
         template <typename distrType>
         static Matrix<T> rndMatr (const size_t size, const int det)
         {
-            const int maxCoef = 5;  // I don't want big coef
+            const int maxCoef = maxCoefConst;  // I don't want big coef
             unsigned seed = std::chrono::system_clock::now ().time_since_epoch ().count ();
             std::mt19937 generator (seed);
 
@@ -274,8 +277,9 @@ namespace matrix {
             try {
                 std::fill_n (arr_, nRows_ * nCols_, val);
             }
-            catch (...) {
+            catch (...) {   //TODO: fix it
                 delete[] arr_;
+                throw;
             }
         }
 
@@ -287,9 +291,7 @@ namespace matrix {
               arr_ (new T[nRows_ * nCols_])  // copy ctor
         {
             try {
-                T *data = other.arr_;
-                for (int i = 0, size = nRows_ * nCols_; i < size; ++i)
-                    arr_[i] = data[i];
+                std::copy (other.arr_, other.arr_ + nRows_ * nCols_, arr_);
             }
             catch (...) {
                 delete[] arr_;
@@ -345,11 +347,9 @@ namespace matrix {
             nRows_ = other.nRows_;
             nCols_ = other.nCols_;
 
-            T *data = other.arr_;
 
             try {
-                for (int i = 0, size = nRows_ * nCols_; i < size; ++i)
-                    arr_[i] = data[i];
+                std::copy (other.arr, other.arr_ + nRows_ * nCols_, arr_);
             }
             catch (...) {
                 delete[] arr_;
@@ -397,6 +397,16 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
+        T det () const
+        {
+            if (nRows_ != nCols_)
+                throw std::logic_error{"matrix is not square! I don't know what are you want from me"};
+
+            return det (std::is_integral<T> ());
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
         static Matrix<T> randomMatrix (const size_t size, const int det)
         {
             static_assert (std::is_fundamental<T> ());
@@ -411,7 +421,7 @@ namespace matrix {
 
         Proxy operator[] (const size_t row)
         {
-            if (row >= nRows_ || row < 0)
+            if (row >= nRows_)
                 throw std::length_error{"you tried to get data from nonexistent row"};
 
             return Proxy (arr_ + nCols_ * row, nCols_);
@@ -421,7 +431,7 @@ namespace matrix {
 
         const Proxy operator[] (const size_t row) const
         {
-            if (row >= nRows_ || row < 0)
+            if (row >= nRows_)
                 throw std::length_error{"you tried to get data from nonexistent row"};
 
             return Proxy (arr_ + nCols_ * row, nCols_);
@@ -449,12 +459,12 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T det () const
+        bool equal (const Matrix<T> &other) const
         {
-            if (nRows_ != nCols_)
-                throw std::logic_error{"matrix is not square! I don't know what are you want from me"};
-
-            return det (std::is_integral<T> ());
+            if (nRows_ != other.nRows_ || nCols_ != other.nCols_)
+                return false;
+            
+            return std::equal(arr_, arr_ + nRows_ * nCols_, other.arr_);
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -464,8 +474,8 @@ namespace matrix {
             Matrix<T> trans (nCols_, nRows_);
             T *transArr = trans.arr_;
 
-            for (int i = 0; i < nRows_; ++i)
-                for (int j = 0; j < nCols_; ++j)
+            for (size_t i = 0; i < nRows_; ++i)
+                for (size_t j = 0; j < nCols_; ++j)
                     transArr[j * nRows_ + i] = arr_[i * nCols_ + j];
 
             std::swap (trans, *this);
@@ -532,11 +542,19 @@ namespace matrix {
     //-----------------------------------------------------------------------------------------------------
 
     template <typename T = double>
-    Matrix<T> operator+ (const Matrix<T> &first, const Matrix<T> &second)  // overload for fun
+    Matrix<T> operator+ (const Matrix<T> &first, const Matrix<T> &second)
     {
         Matrix<T> result (first);
 
         return result += second;
+    }
+
+    //-----------------------------------------------------------------------------------------------------
+
+    template <typename T = double>
+    bool operator== (const Matrix<T> &first, const Matrix<T> &second)
+    {
+        return first.equal (second);
     }
 
     //-----------------------------------------------------------------------------------------------------
