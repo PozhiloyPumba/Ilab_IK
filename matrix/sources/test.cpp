@@ -7,173 +7,198 @@
 namespace {
 
     const double ACCURACY = 1E-4;
-    matrix::Matrix<int> inputMatrix (const char *filenameTests)
-    {
-        FILE *ftest;
 
-        ftest = freopen (filenameTests, "r", stdin);
+    //-----------------------------------------------------------------------------------------------------
+
+    FILE *freopenFile (const char *filename)
+    {
+        FILE *ftest = freopen (filename, "r", stdin);
         if (ftest == NULL) {
             perror ("File open error:");
             assert (false);
         }
+        return ftest;
+    }
 
-        int size;
-        std::cin >> size;
-        assert (std::cin.good ());
+    //-----------------------------------------------------------------------------------------------------
 
-        matrix::Matrix<int> matr (size, size);
-
-        std::cin >> matr;
-        assert (std::cin.good ());
-
-        if (fclose (ftest)) {
+    void closeFile (FILE *filestruct)
+    {
+        if (fclose (filestruct)) {
             perror ("File close error:\n");
             assert (false);
         }
+    }
+
+    //-----------------------------------------------------------------------------------------------------
+
+    template <typename T>
+    matrix::Matrix<T> inputMatrix ()
+    {
+        int size1, size2;
+        std::cin >> size1 >> size2;
+        assert (std::cin.good ());
+
+        matrix::Matrix<T> matr (size1, size2);
+
+        std::cin >> matr;
+        assert (std::cin.good ());
 
         return matr;
     }
 
     //-----------------------------------------------------------------------------------------------------
 
+    template <typename T>
     void testDet (const char *filenameTests, const char *filenameAnsws)
     {
-        matrix::Matrix<int> testMatrix = inputMatrix (filenameTests);
+        FILE *ftest = freopenFile (filenameTests);
 
-        FILE *ftest = freopen (filenameAnsws, "r", stdin);
-        if (ftest == NULL) {
-            perror ("File open error:\n");
-            return;
-        }
+        matrix::Matrix<T> testMatrix = inputMatrix<T> ();
 
-        int rightAns;
+        closeFile (ftest);
+
+        ftest = freopenFile (filenameAnsws);
+
+        T rightAns;
         std::cin >> rightAns;
 
-        if (fclose (ftest)) {
-            perror ("File close error:\n");
-            return;
-        }
-
-        ASSERT_EQ (rightAns, testMatrix.det ());
-    }
-
-    //-----------------------------------------------------------------------------------------------------
-
-    matrix::Matrix<std::complex<double>> inputCmplxMatrix (const char *filenameTests)
-    {
-        FILE *ftest;
-
-        ftest = freopen (filenameTests, "r", stdin);
-        if (ftest == NULL) {
-            perror ("File open error:");
-            assert (false);
-        }
-
-        int size;
-        std::cin >> size;
-        assert (std::cin.good ());
-
-        matrix::Matrix<std::complex<double>> matr (size, size);
-
-        std::cin >> matr;
-        assert (std::cin.good ());
-
-        if (fclose (ftest)) {
-            perror ("File close error:\n");
-            assert (false);
-        }
-
-        return matr;
-    }
-
-    //-----------------------------------------------------------------------------------------------------
-
-    void testCmplxDet (const char *filenameTests, const char *filenameAnsws)
-    {
-        matrix::Matrix<std::complex<double>> testMatrix = inputCmplxMatrix (filenameTests);
-
-        FILE *ftest = freopen (filenameAnsws, "r", stdin);
-        if (ftest == NULL) {
-            perror ("File open error:\n");
-            return;
-        }
-
-        std::complex<double> rightAns;
-        std::cin >> rightAns;
-
-        if (fclose (ftest)) {
-            perror ("File close error:\n");
-            return;
-        }
+        closeFile (ftest);
 
         ASSERT_EQ (std::abs (rightAns - testMatrix.det ()) < ACCURACY, true);
     }
 
+    //-----------------------------------------------------------------------------------------------------
+    
+    template <typename T>
+    void testmul (const char *filenameTests, const char *filenameAnsws)
+    {
+        FILE *ftest = freopenFile (filenameTests);
+
+        matrix::Matrix<T> first = inputMatrix<T> ();
+        matrix::Matrix<T> second = inputMatrix<T> ();
+
+        closeFile (ftest);
+
+        ftest = freopenFile (filenameAnsws);
+
+        matrix::Matrix<T> answer = inputMatrix<T> ();
+
+        closeFile (ftest);
+
+        ASSERT_EQ (first * second, answer);
+    }
+
+    template <typename T>
+    void testtrans (const char *filenameTests, const char *filenameAnsws)
+    {
+        FILE *ftest = freopenFile (filenameTests);
+
+        matrix::Matrix<T> matr = inputMatrix<T> ();
+
+        closeFile (ftest);
+
+        ftest = freopenFile (filenameAnsws);
+
+        matrix::Matrix<T> answer = inputMatrix<T> ();
+
+        closeFile (ftest);
+
+        ASSERT_EQ (~matr, answer);
+    }
 }  // namespace
 
 //=====================================================================================================
 
 TEST (detTest, test1)
 {
-    testDet ("../tests/test1.txt", "../tests/answers/ans1.txt");
+    testDet<int> ("../tests/test1.txt", "../tests/answers/ans1.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (detTest, test2)
 {
-    testDet ("../tests/test2.txt", "../tests/answers/ans2.txt");
+    testDet<int> ("../tests/test2.txt", "../tests/answers/ans2.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (detTest, test3)
 {
-    testDet ("../tests/test3.txt", "../tests/answers/ans3.txt");
+    testDet<int> ("../tests/test3.txt", "../tests/answers/ans3.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (detTest, test4)
 {
-    testDet ("../tests/test4.txt", "../tests/answers/ans4.txt");
+    testDet<int> ("../tests/test4.txt", "../tests/answers/ans4.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (detTest, test5)
 {
-    testDet ("../tests/test5.txt", "../tests/answers/ans5.txt");
+    testDet<int> ("../tests/test5.txt", "../tests/answers/ans5.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (detTest, test6)
 {
-    testDet ("../tests/test6.txt", "../tests/answers/ans6.txt");
+    testDet<int> ("../tests/test6.txt", "../tests/answers/ans6.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (detTest, test7)
 {
-    testDet ("../tests/test7.txt", "../tests/answers/ans7.txt");
+    testDet<int> ("../tests/test7.txt", "../tests/answers/ans7.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (detCmplxTest, test1)
 {
-    testCmplxDet ("../tests/complexMatrixTest1.txt", "../tests/answers/ansComplex1.txt");
+    testDet<std::complex<double>> ("../tests/complexMatrixTest1.txt", "../tests/answers/ansComplex1.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (detCmplxTest, test2)
 {
-    testCmplxDet ("../tests/complexMatrixTest2.txt", "../tests/answers/ansComplex2.txt");
+    testDet<std::complex<double>> ("../tests/complexMatrixTest2.txt", "../tests/answers/ansComplex2.txt");
 }
 
+//-----------------------------------------------------------------------------------------------------
+
+TEST (mul, test1)
+{
+    testmul<int> ("../tests/testmul1.txt", "../tests/answers/ansmul1.txt");
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (mul, test2)
+{
+    testmul<int> ("../tests/testmul2.txt", "../tests/answers/ansmul2.txt");
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (transpose, test1)
+{
+    testtrans<int> ("../tests/testtrans1.txt", "../tests/answers/anstrans1.txt");
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (transpose, test2)
+{
+    testtrans<int> ("../tests/testtrans2.txt", "../tests/answers/anstrans2.txt");
+}
+//TODO: unit-tests for big-5
 //=====================================================================================================
 
 int main (int argc, char **argv)
