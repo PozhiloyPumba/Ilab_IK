@@ -33,9 +33,11 @@ namespace {
     //-----------------------------------------------------------------------------------------------------
 
     template <typename T>
-    matrix::Matrix<T> inputMatrix ()
+    matrix::Matrix<T> inputMatrix (const char *filename)
     {
-        int size1, size2;
+        FILE *ftest = freopenFile (filename);
+
+        size_t size1, size2;
         std::cin >> size1 >> size2;
         assert (std::cin.good ());
 
@@ -43,6 +45,8 @@ namespace {
 
         std::cin >> matr;
         assert (std::cin.good ());
+
+        closeFile (ftest);
 
         return matr;
     }
@@ -52,13 +56,9 @@ namespace {
     template <typename T>
     void testDet (const char *filenameTests, const char *filenameAnsws)
     {
-        FILE *ftest = freopenFile (filenameTests);
+        matrix::Matrix<T> testMatrix = inputMatrix<T> (filenameTests);
 
-        matrix::Matrix<T> testMatrix = inputMatrix<T> ();
-
-        closeFile (ftest);
-
-        ftest = freopenFile (filenameAnsws);
+        FILE *ftest = freopenFile (filenameAnsws);
 
         T rightAns;
         std::cin >> rightAns;
@@ -69,40 +69,25 @@ namespace {
     }
 
     //-----------------------------------------------------------------------------------------------------
-    
+
     template <typename T>
-    void testmul (const char *filenameTests, const char *filenameAnsws)
+    void testmul (const char *filenameTest1, const char *filenameTest2, const char *filenameAnsws)
     {
-        FILE *ftest = freopenFile (filenameTests);
+        matrix::Matrix<T> first = inputMatrix<T> (filenameTest1);
+        matrix::Matrix<T> second = inputMatrix<T> (filenameTest2);
 
-        matrix::Matrix<T> first = inputMatrix<T> ();
-        matrix::Matrix<T> second = inputMatrix<T> ();
-
-        closeFile (ftest);
-
-        ftest = freopenFile (filenameAnsws);
-
-        matrix::Matrix<T> answer = inputMatrix<T> ();
-
-        closeFile (ftest);
+        matrix::Matrix<T> answer = inputMatrix<T> (filenameAnsws);
 
         ASSERT_EQ (first * second, answer);
     }
 
+    //-----------------------------------------------------------------------------------------------------
+
     template <typename T>
     void testtrans (const char *filenameTests, const char *filenameAnsws)
     {
-        FILE *ftest = freopenFile (filenameTests);
-
-        matrix::Matrix<T> matr = inputMatrix<T> ();
-
-        closeFile (ftest);
-
-        ftest = freopenFile (filenameAnsws);
-
-        matrix::Matrix<T> answer = inputMatrix<T> ();
-
-        closeFile (ftest);
+        matrix::Matrix<T> matr = inputMatrix<T> (filenameTests);
+        matrix::Matrix<T> answer = inputMatrix<T> (filenameAnsws);
 
         ASSERT_EQ (~matr, answer);
     }
@@ -175,14 +160,14 @@ TEST (detCmplxTest, test2)
 
 TEST (mul, test1)
 {
-    testmul<int> ("../tests/testmul1.txt", "../tests/answers/ansmul1.txt");
+    testmul<int> ("../tests/testmul1first.txt", "../tests/testmul1second.txt", "../tests/answers/ansmul1.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (mul, test2)
 {
-    testmul<int> ("../tests/testmul2.txt", "../tests/answers/ansmul2.txt");
+    testmul<int> ("../tests/testmul2first.txt", "../tests/testmul2second.txt", "../tests/answers/ansmul2.txt");
 }
 
 //-----------------------------------------------------------------------------------------------------
@@ -198,7 +183,139 @@ TEST (transpose, test2)
 {
     testtrans<int> ("../tests/testtrans2.txt", "../tests/answers/anstrans2.txt");
 }
-//TODO: unit-tests for big-5
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (copyCtor, test1)
+{
+    matrix::Matrix<int> testMatrix = inputMatrix<int> ("../tests/testmul1second.txt");
+    matrix::Matrix<int> copy {testMatrix};
+
+    ASSERT_EQ (copy, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (copyCtor, test2)
+{
+    matrix::Matrix<double> testMatrix = inputMatrix<double> ("../tests/test7.txt");
+    matrix::Matrix<double> copy {testMatrix};
+
+    ASSERT_EQ (copy, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (copyCtor, test3)
+{
+    matrix::Matrix<std::complex<int>> testMatrix = inputMatrix<std::complex<int>> ("../tests/complexMatrixTest2.txt");
+    matrix::Matrix<std::complex<int>> copy {testMatrix};
+
+    ASSERT_EQ (copy, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (moveCtor, test1)
+{
+    matrix::Matrix<int> testMatrix = inputMatrix<int> ("../tests/testmul1second.txt");
+    matrix::Matrix<int> tmpMatrix {testMatrix};
+    matrix::Matrix<int> move {std::move(tmpMatrix)};
+
+    ASSERT_EQ (move, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (moveCtor, test2)
+{
+    matrix::Matrix<double> testMatrix = inputMatrix<double> ("../tests/test7.txt");
+    matrix::Matrix<double> tmpMatrix {testMatrix};
+    matrix::Matrix<double> move {std::move(tmpMatrix)};
+
+    ASSERT_EQ (move, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (moveCtor, test3)
+{
+    matrix::Matrix<std::complex<int>> testMatrix = inputMatrix<std::complex<int>> ("../tests/complexMatrixTest2.txt");
+    matrix::Matrix<std::complex<int>> tmpMatrix {testMatrix};
+    matrix::Matrix<std::complex<int>> move {std::move(tmpMatrix)};
+
+    ASSERT_EQ (move, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (copyAssignmentOperator, test1)
+{
+    matrix::Matrix<int> testMatrix = inputMatrix<int> ("../tests/testmul1second.txt");
+    matrix::Matrix<int> copy;
+    copy = testMatrix;
+
+    ASSERT_EQ (copy, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (copyAssignmentOperator, test2)
+{
+    matrix::Matrix<double> testMatrix = inputMatrix<double> ("../tests/test7.txt");
+    matrix::Matrix<double> copy;
+    copy = testMatrix;
+
+    ASSERT_EQ (copy, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (copyAssignmentOperator, test3)
+{
+    matrix::Matrix<std::complex<int>> testMatrix = inputMatrix<std::complex<int>> ("../tests/complexMatrixTest2.txt");
+    matrix::Matrix<std::complex<int>> copy;
+    copy = testMatrix;
+
+    ASSERT_EQ (copy, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (moveAssignmentOperator, test1)
+{
+    matrix::Matrix<int> testMatrix = inputMatrix<int> ("../tests/testmul1second.txt");
+    matrix::Matrix<int> tmpMatrix {testMatrix};
+    matrix::Matrix<int> move;
+    move = std::move(tmpMatrix);
+
+    ASSERT_EQ (move, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (moveAssignmentOperator, test2)
+{
+    matrix::Matrix<double> testMatrix = inputMatrix<double> ("../tests/test7.txt");
+    matrix::Matrix<double> tmpMatrix {testMatrix};
+    matrix::Matrix<double> move;
+    move = std::move(tmpMatrix);
+
+    ASSERT_EQ (move, testMatrix);
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (moveAssignmentOperator, test3)
+{
+    matrix::Matrix<std::complex<int>> testMatrix = inputMatrix<std::complex<int>> ("../tests/complexMatrixTest2.txt");
+    matrix::Matrix<std::complex<int>> tmpMatrix {testMatrix};
+    matrix::Matrix<std::complex<int>> move;
+    move = std::move(tmpMatrix);
+
+    ASSERT_EQ (move, testMatrix);
+}
+
 //=====================================================================================================
 
 int main (int argc, char **argv)
