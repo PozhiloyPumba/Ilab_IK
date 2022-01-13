@@ -31,41 +31,23 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        size_t maxSubColElem (std::unique_ptr<T *[]> &rows, std::unique_ptr<int[]> &cols, const size_t nCol) const noexcept
-        {
-            size_t maxRow = nCol;
-
-            for (size_t i = nCol + 1; i < nRows_; ++i)
-                if (std::abs (rows[maxRow][cols[nCol]]) < std::abs (rows[i][cols[nCol]]))
-                    maxRow = i;
-
-            return maxRow;
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        size_t maxSubRowElem (std::unique_ptr<T *[]> &rows, std::unique_ptr<int[]> &cols, const size_t nRow) const noexcept
-        {
-            size_t maxCol = nRow;
-
-            for (size_t i = nRow + 1; i < nCols_; ++i)
-                if (std::abs (rows[nRow][cols[maxCol]]) < std::abs (rows[nRow][cols[i]]))
-                    maxCol = i;
-
-            return maxCol;
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        int fakeSwapWithBiggest (std::unique_ptr<T *[]> &fakeRows, std::unique_ptr<int[]> &fakeCols, const size_t index, const bool param) const noexcept
+        int fakeSwapWithBiggest (std::vector<T *> &fakeRows, std::vector<int> &fakeCols, const size_t index, const bool param) const noexcept
         {
             int sign = 1;
-            size_t withMax;
+            size_t withMax = index;
 
-            if (param)
-                withMax = maxSubColElem (fakeRows, fakeCols, index);
-            else
-                withMax = maxSubRowElem (fakeRows, fakeCols, index);
+            if (param) {
+                int realCol = fakeCols[index];
+                for (size_t i = index + 1; i < nRows_; ++i)
+                    if (std::abs (fakeRows[withMax][realCol]) < std::abs (fakeRows[i][realCol]))
+                        withMax = i;
+            }
+            else {
+                T *realRow = fakeRows[index];
+                for (size_t i = index + 1; i < nCols_; ++i)
+                    if (std::abs (realRow[fakeCols[withMax]]) < std::abs (realRow[fakeCols[i]]))
+                        withMax = i;
+            }
 
             if (withMax != index) {
                 sign = -1;
@@ -75,37 +57,6 @@ namespace matrix {
                     std::swap (fakeCols[index], fakeCols[withMax]);
             }
             return sign;
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        T countDet (std::unique_ptr<T *[]> &rows, std::unique_ptr<int[]> &cols, const int sign) const
-        {
-            T det = rows[0][cols[0]];
-            for (size_t i = 1; i < nCols_; ++i)
-                det *= rows[i][cols[i]];
-            return (sign == 1) ? det : -det;
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        std::unique_ptr<int[]> createFakeCols () const
-        {
-            std::unique_ptr<int[]> fakeCols (new int[nCols_]);  // for fake swap cols
-            for (size_t i = 0; i < nCols_; ++i)
-                fakeCols[i] = i;
-
-            return fakeCols;
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        std::unique_ptr<T *[]> createFakeRows () const {
-            std::unique_ptr<T *[]> fakeRows (new T *[nRows_]);  // for fake swap rows
-            for (size_t i = 0; i < nRows_; ++i)
-                fakeRows[i] = arr_ + nCols_ * i;
-
-            return fakeRows;
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -163,11 +114,16 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T fakeGauss ()
+        T fakeGauss ()  // only for square matrix
         {
             int sign = 1;
-            std::unique_ptr<T *[]> fakeRows = createFakeRows ();    //TODO: unique_ptr -> vector
-            std::unique_ptr<int[]> fakeCols = createFakeCols ();    //TODO: unique_ptr -> vector
+            std::vector<T *> fakeRows;  // for fake swap rows
+            std::vector<int> fakeCols;  // for fake swap cols
+
+            for (size_t i = 0; i < nRows_; ++i) {
+                fakeRows.push_back (arr_ + nCols_ * i);
+                fakeCols.push_back (i);
+            }
 
             for (size_t i = 0; i < nRows_; ++i) {
                 sign *= fakeSwapWithBiggest (fakeRows, fakeCols, i, true);
@@ -186,9 +142,11 @@ namespace matrix {
                 }
             }
 
-            T determinant = countDet (fakeRows, fakeCols, sign);
+            T determinant = fakeRows[0][fakeCols[0]];
+            for (size_t i = 1; i < nCols_; ++i)
+                determinant *= fakeRows[i][fakeCols[i]];
 
-            return determinant;
+            return (sign == 1) ? determinant : -determinant;
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -277,7 +235,7 @@ namespace matrix {
             try {
                 std::fill_n (arr_, nRows_ * nCols_, val);
             }
-            catch (...) {   //TODO: fix it
+            catch (const std::exception &e) {
                 delete[] arr_;
                 throw;
             }
@@ -293,7 +251,7 @@ namespace matrix {
             try {
                 std::copy (other.arr_, other.arr_ + nRows_ * nCols_, arr_);
             }
-            catch (...) {
+            catch (const std::exception &e) {
                 delete[] arr_;
                 throw;
             }
@@ -312,7 +270,7 @@ namespace matrix {
                     for (size_t j = 0; j < nCols_; ++j)
                         arr_[i * nCols_ + j] = other[i][j];
             }
-            catch (...) {
+            catch (const std::exception &e) {
                 delete[] arr_;
                 throw;
             }
@@ -340,18 +298,17 @@ namespace matrix {
             try {
                 arr_ = new T[other.nRows_ * other.nCols_];
             }
-            catch (...) {
+            catch (const std::exception &e) {
                 nullify ();
                 throw;
             }
             nRows_ = other.nRows_;
             nCols_ = other.nCols_;
 
-
             try {
-                std::copy (other.arr, other.arr_ + nRows_ * nCols_, arr_);
+                std::copy (other.arr_, other.arr_ + nRows_ * nCols_, arr_);
             }
-            catch (...) {
+            catch (const std::exception &e) {
                 delete[] arr_;
                 nullify ();
                 throw;
@@ -445,7 +402,8 @@ namespace matrix {
                 for (size_t j = 0; j < nCols_; ++j)
                     out << arr_[nCols_ * i + j] << " ";
 
-                out << std::endl;
+                if (i + 1 != nRows_)
+                    out << std::endl;
             }
         }
 
