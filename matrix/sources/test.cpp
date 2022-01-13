@@ -189,7 +189,7 @@ TEST (transpose, test2)
 TEST (copyCtor, test1)
 {
     matrix::Matrix<int> testMatrix = inputMatrix<int> ("../tests/testmul1second.txt");
-    matrix::Matrix<int> copy {testMatrix};
+    matrix::Matrix<int> copy{testMatrix};
 
     ASSERT_EQ (copy, testMatrix);
 }
@@ -199,7 +199,7 @@ TEST (copyCtor, test1)
 TEST (copyCtor, test2)
 {
     matrix::Matrix<double> testMatrix = inputMatrix<double> ("../tests/test7.txt");
-    matrix::Matrix<double> copy {testMatrix};
+    matrix::Matrix<double> copy{testMatrix};
 
     ASSERT_EQ (copy, testMatrix);
 }
@@ -209,7 +209,7 @@ TEST (copyCtor, test2)
 TEST (copyCtor, test3)
 {
     matrix::Matrix<std::complex<int>> testMatrix = inputMatrix<std::complex<int>> ("../tests/complexMatrixTest2.txt");
-    matrix::Matrix<std::complex<int>> copy {testMatrix};
+    matrix::Matrix<std::complex<int>> copy{testMatrix};
 
     ASSERT_EQ (copy, testMatrix);
 }
@@ -219,8 +219,8 @@ TEST (copyCtor, test3)
 TEST (moveCtor, test1)
 {
     matrix::Matrix<int> testMatrix = inputMatrix<int> ("../tests/testmul1second.txt");
-    matrix::Matrix<int> tmpMatrix {testMatrix};
-    matrix::Matrix<int> move {std::move(tmpMatrix)};
+    matrix::Matrix<int> tmpMatrix{testMatrix};
+    matrix::Matrix<int> move{std::move (tmpMatrix)};
 
     ASSERT_EQ (move, testMatrix);
 }
@@ -230,8 +230,8 @@ TEST (moveCtor, test1)
 TEST (moveCtor, test2)
 {
     matrix::Matrix<double> testMatrix = inputMatrix<double> ("../tests/test7.txt");
-    matrix::Matrix<double> tmpMatrix {testMatrix};
-    matrix::Matrix<double> move {std::move(tmpMatrix)};
+    matrix::Matrix<double> tmpMatrix{testMatrix};
+    matrix::Matrix<double> move{std::move (tmpMatrix)};
 
     ASSERT_EQ (move, testMatrix);
 }
@@ -241,8 +241,8 @@ TEST (moveCtor, test2)
 TEST (moveCtor, test3)
 {
     matrix::Matrix<std::complex<int>> testMatrix = inputMatrix<std::complex<int>> ("../tests/complexMatrixTest2.txt");
-    matrix::Matrix<std::complex<int>> tmpMatrix {testMatrix};
-    matrix::Matrix<std::complex<int>> move {std::move(tmpMatrix)};
+    matrix::Matrix<std::complex<int>> tmpMatrix{testMatrix};
+    matrix::Matrix<std::complex<int>> move{std::move (tmpMatrix)};
 
     ASSERT_EQ (move, testMatrix);
 }
@@ -285,9 +285,9 @@ TEST (copyAssignmentOperator, test3)
 TEST (moveAssignmentOperator, test1)
 {
     matrix::Matrix<int> testMatrix = inputMatrix<int> ("../tests/testmul1second.txt");
-    matrix::Matrix<int> tmpMatrix {testMatrix};
+    matrix::Matrix<int> tmpMatrix{testMatrix};
     matrix::Matrix<int> move;
-    move = std::move(tmpMatrix);
+    move = std::move (tmpMatrix);
 
     ASSERT_EQ (move, testMatrix);
 }
@@ -297,9 +297,9 @@ TEST (moveAssignmentOperator, test1)
 TEST (moveAssignmentOperator, test2)
 {
     matrix::Matrix<double> testMatrix = inputMatrix<double> ("../tests/test7.txt");
-    matrix::Matrix<double> tmpMatrix {testMatrix};
+    matrix::Matrix<double> tmpMatrix{testMatrix};
     matrix::Matrix<double> move;
-    move = std::move(tmpMatrix);
+    move = std::move (tmpMatrix);
 
     ASSERT_EQ (move, testMatrix);
 }
@@ -309,9 +309,9 @@ TEST (moveAssignmentOperator, test2)
 TEST (moveAssignmentOperator, test3)
 {
     matrix::Matrix<std::complex<int>> testMatrix = inputMatrix<std::complex<int>> ("../tests/complexMatrixTest2.txt");
-    matrix::Matrix<std::complex<int>> tmpMatrix {testMatrix};
+    matrix::Matrix<std::complex<int>> tmpMatrix{testMatrix};
     matrix::Matrix<std::complex<int>> move;
-    move = std::move(tmpMatrix);
+    move = std::move (tmpMatrix);
 
     ASSERT_EQ (move, testMatrix);
 }

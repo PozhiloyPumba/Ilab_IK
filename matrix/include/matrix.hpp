@@ -1,14 +1,14 @@
 #ifndef MATRIX_HPP_
 #define MATRIX_HPP_
 
+#include <algorithm>
 #include <chrono>
 #include <complex>
 #include <cstring>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <random>
-#include <algorithm>
-#include <iterator>
 
 namespace matrix {
     const double EPSILON = 10E-15;
@@ -421,8 +421,8 @@ namespace matrix {
         {
             if (nRows_ != other.nRows_ || nCols_ != other.nCols_)
                 return false;
-            
-            return std::equal(arr_, arr_ + nRows_ * nCols_, other.arr_);
+
+            return std::equal (arr_, arr_ + nRows_ * nCols_, other.arr_);
         }
 
         //-----------------------------------------------------------------------------------------------------
