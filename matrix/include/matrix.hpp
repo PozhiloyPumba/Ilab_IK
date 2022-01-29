@@ -14,20 +14,93 @@ namespace matrix {
     const double EPSILON = 10E-15;
     const int maxCoefConst = 5;
 
+    //-----------------------------------------------------------------------------------------------------
+
+    template <typename T>
+    void construct (T *p, const T &rhs)
+    {
+        new (p) T (rhs);
+    }
+
+    //-----------------------------------------------------------------------------------------------------
+
+    template <typename T>
+    void destroy (T *p) noexcept
+    {
+        p->~T ();
+    }
+
+    //-----------------------------------------------------------------------------------------------------
+
+    template <typename FwdIt>
+    void destroy (FwdIt begin, FwdIt end) noexcept
+    {
+        while (begin++ != end)
+            destroy (&*begin);
+    }
+
+    //=====================================================================================================
+
     template <typename T = double>
-    class Matrix final {
-    private:
-        size_t nRows_, nCols_;
+    class MatrixBuf {
+    protected:
         T *arr_;
+        size_t size_;
 
         //-----------------------------------------------------------------------------------------------------
 
-        void nullify () noexcept
+        MatrixBuf (const size_t size = 0)  // ctor
+            : arr_ ((size == 0) ? nullptr : static_cast<T *> (::operator new (sizeof (T) * size))),
+              size_ (size)
         {
-            arr_ = nullptr;
-            nCols_ = 0;
-            nRows_ = 0;
         }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        MatrixBuf (const MatrixBuf<T> &other) = delete;
+        MatrixBuf &operator= (const MatrixBuf<T> &other) = delete;
+
+        //-----------------------------------------------------------------------------------------------------
+
+        MatrixBuf (MatrixBuf<T> &&other) noexcept
+            : arr_ (other.arr_),
+              size_ (other.size_)  // move ctor
+        {
+            other.arr_ = nullptr;
+            other.size_ = 0;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        MatrixBuf &operator= (MatrixBuf<T> &&other) noexcept  // move operator
+        {
+            if (this == &other)
+                return *this;
+
+            std::swap (arr_, other.arr_);
+            std::swap (size_, other.size_);
+
+            return *this;
+        }
+
+        //-----------------------------------------------------------------------------------------------------
+
+        ~MatrixBuf ()
+        {
+            destroy (arr_, arr_ + size_);
+            ::operator delete (arr_);
+        }
+    };
+
+    //=====================================================================================================
+
+    template <typename T = double>
+    class Matrix final : private MatrixBuf<T> {
+    private:
+        using MatrixBuf<T>::arr_;
+        using MatrixBuf<T>::size_;
+
+        size_t nRows_, nCols_;
 
         //-----------------------------------------------------------------------------------------------------
 
@@ -94,7 +167,7 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T det (std::false_type) const
+        T det (std::true_type) const
         {
             Matrix<T> support (*this);
             T det = support.fakeGauss ();
@@ -104,12 +177,12 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T det (std::true_type) const
+        T det (std::false_type) const
         {
             Matrix<double> support (*this);
             double det = support.det ();
 
-            return round (det);
+            return std::round (det);
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -162,10 +235,12 @@ namespace matrix {
             B.transpose ();
             T *otherArr = B.arr_;
             for (int i = 0; i < nRows_; ++i) {
+                size_t row1 = i * nCols_;
                 for (int j = 0; j < other.nCols_; ++j) {
                     T temporary_sum = T{};
+                    size_t row2 = j * B.nCols_;
                     for (int k = 0; k < other.nRows_; ++k)
-                        temporary_sum += arr_[i * nCols_ + k] * otherArr[j * B.nCols_ + k];
+                        temporary_sum += arr_[row1 + k] * otherArr[row2 + k];
                     temporary_m[i][j] = temporary_sum;
                 }
             }
@@ -219,41 +294,33 @@ namespace matrix {
 
     public:
         Matrix (const size_t nRows = 0, const size_t nCols = 0)  // ctor
-            : nRows_ (nRows),
-              nCols_ (nCols),
-              arr_ (new T[nRows * nCols])
+            : MatrixBuf<T> (nRows * nCols),
+              nRows_ (nRows),
+              nCols_ (nCols)
         {
         }
 
         //-----------------------------------------------------------------------------------------------------
 
         Matrix (const size_t nRows, const size_t nCols, T val)  // ctor
-            : nRows_ (nRows),
-              nCols_ (nCols),
-              arr_ (new T[nRows * nCols])
+            : MatrixBuf<T> (nRows * nCols),
+              nRows_ (nRows),
+              nCols_ (nCols)
         {
-            try {
-                std::fill_n (arr_, nRows_ * nCols_, val);
-            }
-            catch (const std::exception &e) {
-                delete[] arr_;
-                throw;
-            }
+            std::fill_n (arr_, nRows_ * nCols_, val);
         }
 
         //-----------------------------------------------------------------------------------------------------
 
         Matrix (const Matrix<T> &other)
-            : nRows_ (other.nRows_),
-              nCols_ (other.nCols_),
-              arr_ (new T[nRows_ * nCols_])  // copy ctor
+            : MatrixBuf<T> (other.nRows_ * other.nCols_),
+              nRows_ (other.nRows_),
+              nCols_ (other.nCols_)  // copy ctor
         {
-            try {
-                std::copy (other.arr_, other.arr_ + nRows_ * nCols_, arr_);
-            }
-            catch (const std::exception &e) {
-                delete[] arr_;
-                throw;
+            size_ = 0;
+            while (size_ < other.size_) {
+                construct<T> (arr_ + size_, other.arr_[size_]);
+                ++size_;
             }
         }
 
@@ -261,73 +328,29 @@ namespace matrix {
 
         template <typename otherT>
         Matrix (const Matrix<otherT> &other)
-            : nRows_ (other.getNRows ()),
-              nCols_ (other.getNCols ()),
-              arr_ (new T[nRows_ * nCols_])  // copy ctor from other type
+            : MatrixBuf<T> (other.getNRows () * other.getNCols ()),
+              nRows_ (other.getNRows ()),
+              nCols_ (other.getNCols ())  // copy ctor from other type
         {
-            try {
-                for (size_t i = 0; i < nRows_; ++i)
-                    for (size_t j = 0; j < nCols_; ++j)
-                        arr_[i * nCols_ + j] = other[i][j];
-            }
-            catch (const std::exception &e) {
-                delete[] arr_;
-                throw;
+            size_t otherSz = other.getNRows () * other.getNCols ();
+            size_ = 0;
+            while (size_ < otherSz) {
+                construct<T> (arr_ + size_, other[size_ / nCols_][size_ % nRows_]);
+                ++size_;
             }
         }
 
         //-----------------------------------------------------------------------------------------------------
 
-        Matrix (Matrix<T> &&other) noexcept
-            : nRows_ (other.nRows_),
-              nCols_ (other.nCols_),
-              arr_ (other.arr_)  // move ctor
-        {
-            other.nullify ();
-        }
+        Matrix (Matrix<T> &&other) noexcept = default;             // move ctor
+        Matrix &operator= (Matrix<T> &&other) noexcept = default;  // move operator
 
         //-----------------------------------------------------------------------------------------------------
 
         Matrix &operator= (const Matrix<T> &other)  // assignment operator
         {
-            if (this == &other)
-                return *this;
-
-            delete[] arr_;
-
-            try {
-                arr_ = new T[other.nRows_ * other.nCols_];
-            }
-            catch (const std::exception &e) {
-                nullify ();
-                throw;
-            }
-            nRows_ = other.nRows_;
-            nCols_ = other.nCols_;
-
-            try {
-                std::copy (other.arr_, other.arr_ + nRows_ * nCols_, arr_);
-            }
-            catch (const std::exception &e) {
-                delete[] arr_;
-                nullify ();
-                throw;
-            }
-
-            return *this;
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        Matrix &operator= (Matrix<T> &&other) noexcept  // move operator
-        {
-            if (this == &other)
-                return *this;
-
-            std::swap (other.arr_, arr_);
-            std::swap (nRows_, other.nRows_);
-            std::swap (nCols_, other.nCols_);
-
+            Matrix tmp (other);
+            std::swap (tmp, *this);
             return *this;
         }
 
@@ -335,7 +358,6 @@ namespace matrix {
 
         ~Matrix ()  // dtor
         {
-            delete[] arr_;
         }
 
         //-----------------------------------------------------------------------------------------------------
@@ -359,14 +381,17 @@ namespace matrix {
             if (nRows_ != nCols_)
                 throw std::logic_error{"matrix is not square! I don't know what are you want from me"};
 
-            return det (std::is_integral<T> ());
+            if constexpr (std::is_floating_point<T> () || std::is_same<T, std::complex<double>> ())  // I really want the matrix to work at least for std::complex<double>
+                return det (std::true_type ());
+            else
+                return det (std::false_type ());
         }
 
         //-----------------------------------------------------------------------------------------------------
 
         static Matrix<T> randomMatrix (const size_t size, const int det)
         {
-            static_assert (std::is_fundamental<T> ());
+            static_assert (std::is_fundamental<T> (), "I can't generate random matrix with this type");
 
             if constexpr (std::is_integral<T> ())
                 return rndMatr<std::uniform_int_distribution<T>> (size, det);
@@ -399,8 +424,9 @@ namespace matrix {
         void dump (std::ostream &out) const
         {
             for (size_t i = 0; i < nRows_; ++i) {
+                size_t row = nCols_ * i;
                 for (size_t j = 0; j < nCols_; ++j)
-                    out << arr_[nCols_ * i + j] << " ";
+                    out << arr_[row + j] << " ";
 
                 if (i + 1 != nRows_)
                     out << std::endl;
@@ -432,9 +458,11 @@ namespace matrix {
             Matrix<T> trans (nCols_, nRows_);
             T *transArr = trans.arr_;
 
-            for (size_t i = 0; i < nRows_; ++i)
+            for (size_t i = 0; i < nRows_; ++i) {
+                size_t row = i * nCols_;
                 for (size_t j = 0; j < nCols_; ++j)
-                    transArr[j * nRows_ + i] = arr_[i * nCols_ + j];
+                    transArr[j * nRows_ + i] = arr_[row + j];
+            }
 
             std::swap (trans, *this);
 
@@ -456,9 +484,11 @@ namespace matrix {
                 throw std::logic_error{"I can't add these matrix because their size isn't equal"};
 
             T *otherArr = other.arr_;
-            for (int i = 0; i < nRows_; ++i)
+            for (int i = 0; i < nRows_; ++i) {
+                size_t row = i * nCols_;
                 for (int j = 0; j < nCols_; ++j)
-                    arr_[i * nCols_ + j] += otherArr[i * nCols_ + j];
+                    arr_[row + j] += otherArr[row + j];
+            }
 
             return (*this);
         }
@@ -471,9 +501,11 @@ namespace matrix {
             if (del == delType{})
                 throw std::logic_error{"Floating point exception\n"};
 
-            for (int i = 0; i < nRows_; ++i)
+            for (int i = 0; i < nRows_; ++i) {
+                size_t row = i * nCols_;
                 for (int j = 0; j < nCols_; ++j)
-                    arr_[i * nCols_ + j] /= del;
+                    arr_[row + j] /= del;
+            }
 
             return (*this);
         }

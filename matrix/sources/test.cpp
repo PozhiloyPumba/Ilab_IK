@@ -4,7 +4,32 @@
 
 #include "matrix.hpp"
 
+int a = 0;
+
 namespace {
+
+    struct MyInt {  // it is for tests))
+        int x_;
+        MyInt (int x = 0) : x_ (x)
+        {
+        }
+
+        operator int () { return x_; }
+        operator int () const { return x_; }
+    };
+
+    MyInt operator- (const MyInt &first, const MyInt &second)  // only for compare determinant
+    {
+        return first.x_ - second.x_;
+    }
+
+    std::istream &operator>> (std::istream &in, MyInt &a)
+    {
+        in >> a.x_;
+        return in;
+    }
+
+    //-----------------------------------------------------------------------------------------------------
 
     const double ACCURACY = 1E-4;
 
@@ -65,7 +90,8 @@ namespace {
 
         closeFile (ftest);
 
-        ASSERT_EQ (std::abs (rightAns - testMatrix.det ()) < ACCURACY, true);
+        T ourAns = rightAns - testMatrix.det ();
+        ASSERT_EQ (std::abs (ourAns) < ACCURACY, true);
     }
 
     //-----------------------------------------------------------------------------------------------------
@@ -142,7 +168,21 @@ TEST (detTest, test7)
     testDet<int> ("../tests/test7.txt", "../tests/answers/ans7.txt");
 }
 
+//=====================================================================================================
+
+TEST (detCustomIntTest, test1)
+{
+    testDet<MyInt> ("../tests/test7.txt", "../tests/answers/ans7.txt");
+}
+
 //-----------------------------------------------------------------------------------------------------
+
+TEST (detCustomIntTest, test2)
+{
+    testDet<MyInt> ("../tests/test6.txt", "../tests/answers/ans6.txt");
+}
+
+//=====================================================================================================
 
 TEST (detCmplxTest, test1)
 {
@@ -156,7 +196,7 @@ TEST (detCmplxTest, test2)
     testDet<std::complex<double>> ("../tests/complexMatrixTest2.txt", "../tests/answers/ansComplex2.txt");
 }
 
-//-----------------------------------------------------------------------------------------------------
+//=====================================================================================================
 
 TEST (mul, test1)
 {
@@ -170,7 +210,7 @@ TEST (mul, test2)
     testmul<int> ("../tests/testmul2first.txt", "../tests/testmul2second.txt", "../tests/answers/ansmul2.txt");
 }
 
-//-----------------------------------------------------------------------------------------------------
+//=====================================================================================================
 
 TEST (transpose, test1)
 {
@@ -184,7 +224,7 @@ TEST (transpose, test2)
     testtrans<int> ("../tests/testtrans2.txt", "../tests/answers/anstrans2.txt");
 }
 
-//-----------------------------------------------------------------------------------------------------
+//=====================================================================================================
 
 TEST (copyCtor, test1)
 {
@@ -215,6 +255,16 @@ TEST (copyCtor, test3)
 }
 
 //-----------------------------------------------------------------------------------------------------
+
+TEST (copyCtor, test4)
+{
+    matrix::Matrix<MyInt> testMatrix = inputMatrix<MyInt> ("../tests/test7.txt");
+    matrix::Matrix<MyInt> copy{testMatrix};
+
+    ASSERT_EQ (copy, testMatrix);
+}
+
+//=====================================================================================================
 
 TEST (moveCtor, test1)
 {
@@ -247,7 +297,7 @@ TEST (moveCtor, test3)
     ASSERT_EQ (move, testMatrix);
 }
 
-//-----------------------------------------------------------------------------------------------------
+//=====================================================================================================
 
 TEST (copyAssignmentOperator, test1)
 {
@@ -280,7 +330,7 @@ TEST (copyAssignmentOperator, test3)
     ASSERT_EQ (copy, testMatrix);
 }
 
-//-----------------------------------------------------------------------------------------------------
+//=====================================================================================================
 
 TEST (moveAssignmentOperator, test1)
 {
