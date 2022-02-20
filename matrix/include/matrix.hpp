@@ -25,7 +25,7 @@ namespace matrix {
     //-----------------------------------------------------------------------------------------------------
 
     template <typename T>
-    void destroy (T *p) noexcept
+    void myDestroy (T *p) noexcept
     {
         p->~T ();
     }
@@ -33,10 +33,10 @@ namespace matrix {
     //-----------------------------------------------------------------------------------------------------
 
     template <typename FwdIt>
-    void destroy (FwdIt begin, FwdIt end) noexcept
+    void myDestroy (FwdIt begin, FwdIt end) noexcept
     {
         while (begin++ != end)
-            destroy (&*begin);
+            myDestroy (&*begin);
     }
 
     //=====================================================================================================
@@ -87,7 +87,7 @@ namespace matrix {
 
         ~MatrixBuf ()
         {
-            destroy (arr_, arr_ + size_);
+            myDestroy (arr_, arr_ + size_);
             ::operator delete (arr_);
         }
     };
@@ -401,17 +401,7 @@ namespace matrix {
 
         //=====================================================================================================
 
-        Proxy operator[] (const size_t row)
-        {
-            if (row >= nRows_)
-                throw std::length_error{"you tried to get data from nonexistent row"};
-
-            return Proxy (arr_ + nCols_ * row, nCols_);
-        }
-
-        //-----------------------------------------------------------------------------------------------------
-
-        const Proxy operator[] (const size_t row) const
+        Proxy operator[] (const size_t row) const
         {
             if (row >= nRows_)
                 throw std::length_error{"you tried to get data from nonexistent row"};
