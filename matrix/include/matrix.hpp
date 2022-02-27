@@ -169,8 +169,7 @@ namespace matrix {
 
         T det (std::true_type) const
         {
-            Matrix<T> support (*this);
-            T det = support.fakeGauss ();
+            T det = fakeGauss ();
 
             return det;
         }
@@ -187,7 +186,7 @@ namespace matrix {
 
         //-----------------------------------------------------------------------------------------------------
 
-        T fakeGauss ()  // only for square matrix
+        T fakeGauss () const // only for square matrix
         {
             int sign = 1;
             std::vector<T *> fakeRows;  // for fake swap rows
