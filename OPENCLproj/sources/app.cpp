@@ -18,8 +18,7 @@ namespace OpenCLApp {
             // for (auto device: devices) {
             //     std::cout << device.getInfo<CL_DEVICE_NAME>();
             // }
-            if ((*curIt).getInfo<CL_PLATFORM_NAME> () ==
-                "NVIDIA CUDA")  // TODO only for me
+            if ((*curIt).getInfo<CL_PLATFORM_NAME> () == "NVIDIA CUDA")  // TODO only for me
                 return *curIt;
         }
         throw std::runtime_error ("No platform with GPU devices(((");
@@ -43,9 +42,24 @@ namespace OpenCLApp {
         return cl::Context (contextDevices);
     }
 
-    void App::BitonicSort (cl_int const *data, size_t size)
+    void App::BitonicSort (cl_int *data, size_t size)
     {
-        size_t BufSz = size * sizeof (cl_int);
+        size_t bufSize = size * sizeof (cl_int);
+        cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
+        cl::copy(queue_, data, data + size, clData);
+
+        cl::Program program (context_, program_, true);
+
+        sort_t kernel(program, "bitonicSort");
+
+        cl::NDRange GlobalRange (size);
+        cl::NDRange LocalRange (1); //TODO!!!
+        cl::EnqueueArgs Args(queue_, GlobalRange, LocalRange);
+
+        cl::Event evt = kernel(Args, clData);
+        evt.wait();
+
+        cl::copy(queue_, clData, data, data + size);
     }
 
 }  // namespace OpenCLApp
