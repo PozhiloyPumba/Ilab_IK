@@ -36,30 +36,60 @@ namespace OpenCLApp {
 
     cl::Context App::getGPUcontext (cl::Device &device)
     {
-        cl::vector<cl::Device> contextDevices;
-        contextDevices.push_back (device);
-
-        return cl::Context (contextDevices);
+        return cl::Context (device);
     }
 
-    void App::BitonicSort (cl_int *data, size_t size)
+    void App::GPUBitonicSort (cl_int *data, size_t size)
     {
         size_t bufSize = size * sizeof (cl_int);
         cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
         cl::copy(queue_, data, data + size, clData);
 
-        cl::Program program (context_, program_, true);
+        try {
+            cl::Program program (context_, program_, true);
+            sort_t kernel(program, "bitonicSort");
 
-        sort_t kernel(program, "bitonicSort");
+            for (size_t power = 1; power < size;) {
+                power <<= 1;
+                for (size_t subPower = power; subPower > 1; subPower >>= 1) {
+                    cl::NDRange GlobalRange (size / subPower, subPower >> 1);
+                    cl::EnqueueArgs Args(queue_, GlobalRange);
 
-        cl::NDRange GlobalRange (size);
-        cl::NDRange LocalRange (1); //TODO!!!
-        cl::EnqueueArgs Args(queue_, GlobalRange, LocalRange);
-
-        cl::Event evt = kernel(Args, clData);
-        evt.wait();
+                    cl::Event evt = kernel(Args, clData, subPower, power);
+                    evt.wait();
+                }
+            }
+        } catch (cl::BuildError &err) {
+            std::cerr << "OCL BUILD ERROR: " << err.err() << ":" << err.what()
+                        << std::endl;
+            std::cerr << "-- Log --\n";
+            for (auto e : err.getBuildLog())
+                std::cerr << e.second;
+            std::cerr << "-- End log --\n";
+            return;
+        }
 
         cl::copy(queue_, clData, data, data + size);
     }
 
+    void App::CPUBitonicSort (cl_int *data, int size)
+    {
+        for (int power = 1; power < size;) {
+            power <<= 1;
+            for (int subPower = power; subPower > 1; subPower >>= 1) {
+                
+                
+                for (int indexPow = 0; indexPow < size; indexPow += subPower) { //can parallel
+                    int half = subPower >> 1;
+                    bool up = indexPow / power % 2;
+                    for (int i = 0; i < half; ++i) {  //can parallel
+                        if (up ^ (data[indexPow + i] > data[indexPow + half + i]))
+                            std::swap (data[indexPow + i], data[indexPow + half + i]);
+                    }
+                }   //barier
+
+
+            }   //barier
+        }
+    }
 }  // namespace OpenCLApp

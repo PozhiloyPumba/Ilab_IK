@@ -18,12 +18,14 @@ namespace OpenCLApp {
         static cl::Device getGPUdevice (cl::Platform &platform);
         static cl::Context getGPUcontext (cl::Device &device);
 
-        using sort_t = cl::KernelFunctor<cl::Buffer>;
+        using sort_t = cl::KernelFunctor<cl::Buffer, cl_int, cl_int>;
 
     public:
         App (const std::string &sourceFileName)
             : platform_ (selectGPUplatform ()), device_ (getGPUdevice (platform_)), context_ (getGPUcontext (device_)), queue_ (context_)
         {
+            std::cout << device_.getInfo<CL_DEVICE_NAME>() << std::endl;
+            
             std::fstream in (sourceFileName, std::ios_base::in);
 
             while (in) {
@@ -33,6 +35,8 @@ namespace OpenCLApp {
             }
         }
 
-        void BitonicSort (cl_int *data, size_t size);
+        void GPUBitonicSort (cl_int *data, size_t size);
+
+        void CPUBitonicSort (cl_int *data, int size);
     };
 }  // namespace OpenCLApp
