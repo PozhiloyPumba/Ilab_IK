@@ -45,7 +45,6 @@ set (COMPILER_SETTINGS
     -Wpedantic
 
     -Wsign-promo
-    -Wsign-conversion
     -Wdouble-promotion
 
     -Wfloat-equal

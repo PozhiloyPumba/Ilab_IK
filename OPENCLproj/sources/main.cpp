@@ -1,17 +1,37 @@
 #include "app.hpp"
+#include <algorithm>
+#include <chrono>
 
 int main ()
 {
-    OpenCLApp::App app ("../sources/bitonicSort.cl");
+    OpenCLApp::App<int> app ("../sources/bitonicSort.cl");
+    
+    size_t size;
+    std::cin >> size;
 
-    cl::vector<int> test {10,7,-2,9,0,-9,5,3};
+    cl::vector<int> test(size);
 
-    // app.GPUBitonicSort(test.data(), test.size());
-    app.CPUBitonicSort (test.data(), test.size());
+    int tmp;
+    for (size_t i = 0; i < size; ++i) {
+        std::cin >> tmp;
+        test.push_back (tmp);
+    }
 
-    std::cout << "sort" << std::endl;
-    for (auto el: test)
-        std::cout << el << " ";
+    auto start = std::chrono::steady_clock::now ();
+
+    app.GPUBitonicSort (test);
+    // app.simpleBitonicSort (test);
+
+    // std::sort (test.begin(), test.end());
+
+    auto end = std::chrono::steady_clock::now ();
+
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    // std::cout << "elapsed time: " << elapsed_seconds.count () << "s\n";
+
+    // std::cout << "sort" << std::endl;
+    // for (auto el: test)
+    //     std::cout << el << " ";
 
     std::cout << std::endl;
 
