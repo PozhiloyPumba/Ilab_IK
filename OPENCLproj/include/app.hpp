@@ -87,30 +87,33 @@ namespace OpenCLApp {
     void App<T>::GPUBitonicSort (cl::vector<T> &vec)
     {
         int vecSize = vec.size();
-        int newVecSize = std::pow (2, std::log2 (vec.size()) + 1);
-        int bufSize = newVecSize * sizeof (cl_int);
+        int size = std::pow (2, int (std::log2 (vec.size())) + 1);
+        int bufSize = size * sizeof (cl_int);
 
-        for (int i = vecSize; i < newVecSize; ++i) {
+        for (int i = vecSize; i < size; ++i)
             vec.push_back (INT32_MAX);
-        }
 
         cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
         cl::copy(queue_, vec.begin(), vec.end(), clData);
 
         try {
-            size_t size = vec.size();
             cl::Program program (context_, kernel_, true);
             sort_t kernel(program, "bitonicSort");
+            
+            cl::NDRange GlobalRange (size / 2, 1);
+            cl::EnqueueArgs Args(queue_, GlobalRange);
+            cl::Event evt = kernel(Args, clData, 2, 2);
 
-            for (size_t power = 2; power < size; power <<= 1) { //TODO: move it in the GPU
-                for (size_t subPower = power; subPower > 1; subPower >>= 1) {
-                    cl::NDRange GlobalRange (size / subPower, subPower >> 1);
-                    cl::EnqueueArgs Args(queue_, GlobalRange);
+            for (int power = 2; power < size;) {
+                power <<= 1;
+                for (int subPower = power; subPower > 1; subPower >>= 1) {
+                    cl::NDRange locGlobalRange (size / subPower, subPower >> 1);
+                    cl::EnqueueArgs locArgs (queue_, evt, locGlobalRange);
 
-                    cl::Event evt = kernel(Args, clData, subPower, power);
-                    evt.wait();
+                    evt = kernel(locArgs, clData, subPower, power);
                 }
             }
+            evt.wait();
             
         } catch (cl::BuildError &err) {
             std::cerr << "OCL BUILD ERROR: " << err.err() << ":" << err.what()
