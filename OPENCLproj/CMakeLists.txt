@@ -23,16 +23,21 @@ endif()
 find_package(OpenCL REQUIRED)
 
 set (EXEC_FILE "sort")
+set (GEN_FILE "generator")
 
 set (SOURCES
     sources/main.cpp
-    sources/app.cpp
+)
+
+set (GEN
+    sources/generator.cpp
 )
 
 set (HEADERS
     include/app.hpp
 )
 
+add_executable(${GEN_FILE} ${GEN})
 add_executable(${EXEC_FILE} ${SOURCES})
 target_include_directories(${EXEC_FILE} PRIVATE include)
 
@@ -56,3 +61,4 @@ set (COMPILER_SETTINGS
 )
 
 target_compile_options(${EXEC_FILE} PRIVATE ${COMPILER_SETTINGS})
+target_compile_options(${GEN_FILE} PRIVATE ${COMPILER_SETTINGS})
