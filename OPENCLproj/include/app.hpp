@@ -20,7 +20,7 @@ namespace OpenCLApp {
         static cl::CommandQueue getCommandQueue (cl::Context &ctx);
 
         using sort_t = cl::KernelFunctor<cl::Buffer, cl_int, cl_int>;
-        using sort_rec_t = cl::KernelFunctor<cl::Buffer, cl_int, cl_int, cl_int>;
+        using sort_rec_t = cl::KernelFunctor<cl::Buffer, cl_int, cl_int>;
 
         void BitonicSort (cl::vector<T> &vec, cl_int begin, cl_int end, cl_int direction);
         void BitonicMerge (cl::vector<T> &vec, cl_int begin, cl_int end, cl_int direction);
@@ -29,13 +29,17 @@ namespace OpenCLApp {
         App (const std::string &sourceFileName)
             : platform_ (selectGPUplatform ()), context_ (getGPUcontext (platform_())), queue_ (getCommandQueue (context_))
         {   
-            std::fstream in (sourceFileName, std::ios_base::in);
-
-            while (in) {
+            std::ifstream in;
+            in.exceptions (std::ifstream::failbit | std::ifstream::badbit);
+            in.open (sourceFileName);
+            
+            while (!in.eof()) {
                 std::string newLine;
                 std::getline (in, newLine);
                 kernel_ += newLine + "\n";
             }
+
+            in.close();
         }
 
         void GPUBitonicSort (cl::vector<T> &vec);
@@ -43,8 +47,6 @@ namespace OpenCLApp {
         void BitonicSort (cl::vector<T> &vec);
 
         void recBitonicSort (cl::vector<T> &vec);
-
-        void GPUrecBitonicSort (cl::vector<T> &vec);
     };
 
     template <typename T>
@@ -95,30 +97,31 @@ namespace OpenCLApp {
     void App<T>::GPUBitonicSort (cl::vector<T> &vec)
     {
         int vecSize = vec.size();
-        int size = std::pow (2, int (std::log2 (vec.size())) + 1);
+
+        int size = 1;
+        while (size < vecSize)
+            size <<= 1;
+        
         int bufSize = size * sizeof (cl_int);
 
         vec.insert(vec.end(), size - vecSize, INT32_MAX);
 
         cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
-        cl::copy(queue_, vec.begin(), vec.end(), clData);
+        cl::copy(queue_, vec.begin(), vec.begin() + size, clData);
 
         try {
             cl::Program program (context_, kernel_, true);
             sort_t kernel(program, "bitonicSort");
             
-            cl::NDRange GlobalRange (size / 2, 1);
+            cl::NDRange GlobalRange (size);
             cl::EnqueueArgs Args(queue_, GlobalRange);
-            cl::Event evt = kernel(Args, clData, 2, 2);
-            cl_ulong time = 0;
+            cl::Event evt = kernel(Args, clData, 1, 2);
 
-            for (int power = 2; power < size;) {
-                power <<= 1;
+            for (int power = 4; power <= size; power <<= 1) {
                 for (int subPower = power; subPower > 1; subPower >>= 1) {
-                    cl::NDRange locGlobalRange (size / subPower, subPower >> 1);
-                    cl::EnqueueArgs locArgs (queue_, evt, locGlobalRange);
+                    cl::EnqueueArgs locArgs (queue_, evt, GlobalRange);
 
-                    evt = kernel(locArgs, clData, subPower, power);
+                    evt = kernel(locArgs, clData, subPower >> 1, power);
                 }
             }
             evt.wait();
@@ -138,7 +141,7 @@ namespace OpenCLApp {
             return;
         }
 
-        cl::copy(queue_, clData, vec.begin(), vec.begin() + vecSize);
+        cl::copy(queue_, clData, vec.begin(), vec.begin() + size);
         vec.erase (vec.begin() + vecSize, vec.end());
     }
 
@@ -166,49 +169,6 @@ namespace OpenCLApp {
                 }
             }
         }
-
-        vec.erase (vec.begin() + vecSize, vec.end());
-    }
-
-    template <typename T>
-    void App<T>::GPUrecBitonicSort (cl::vector<T> &vec)
-    {
-        int vecSize = vec.size();
-        int size = std::pow (2, int(std::log2 (vec.size())) + 1);
-        int bufSize = size * sizeof (cl_int);
-
-        vec.insert(vec.end(), size - vecSize, INT32_MAX);
-        cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
-
-        try {
-            cl::copy(queue_, vec.begin(), vec.end(), clData);
-            
-            cl::Program program (context_, kernel_, true);
-            sort_rec_t kernel(program, "bitonicSort");
-            
-            cl::NDRange GlobalRange (size, size / 2);
-            cl::NDRange LocalRange (2);
-            cl::EnqueueArgs Args(queue_, GlobalRange, LocalRange);
-            cl::Event evt = kernel(Args, clData, 0, size, 1);
-
-            evt.wait();
-            
-        } catch (cl::BuildError &err) {
-            std::cerr << "OCL BUILD ERROR: " << err.err() << ":" << err.what()
-                        << std::endl;
-            std::cerr << "-- Log --\n";
-            for (auto e : err.getBuildLog())
-                std::cerr << e.second;
-            std::cerr << "-- End log --\n";
-            return;
-        }
-        catch (cl::Error &e) {
-            std::cerr << "OCL ERROR: " << e.err() << ":" << e.what()
-                        << std::endl;
-            return;
-        }
-
-        cl::copy(queue_, clData, vec.begin(), vec.begin() + vecSize);
 
         vec.erase (vec.begin() + vecSize, vec.end());
     }

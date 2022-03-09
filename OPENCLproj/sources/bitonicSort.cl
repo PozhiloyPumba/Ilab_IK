@@ -1,17 +1,14 @@
 __kernel void bitonicSort(__global int *A, int subPower, int power) 
 {
-  int indexPow = get_global_id(0);
-  indexPow *= subPower;
+  int i = get_global_id(0);
 
-  int half_ = subPower / 2;
-  int up = indexPow / power % 2;
+  int swapIndex = i | subPower;
+  int up = (i & power) ? 1: 0;
 
-  int i = get_global_id(1);
-
-  int first = A[indexPow + i];
-  int second = A[indexPow + half_ + i];
-  if (up != (first > second)) {
-        A[indexPow + i] = second;
-        A[indexPow + half_ + i] = first;
+  int first = A[i];
+  int second = A[swapIndex];
+  if (i != swapIndex && up != (first > second)) {
+        A[i] = second;
+        A[swapIndex] = first;
   }
 }

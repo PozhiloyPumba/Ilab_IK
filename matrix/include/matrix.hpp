@@ -169,6 +169,7 @@ namespace matrix {
 
         T det (std::true_type) const
         {
+            Matrix<double> support (*this);
             T det = fakeGauss ();
 
             return det;
