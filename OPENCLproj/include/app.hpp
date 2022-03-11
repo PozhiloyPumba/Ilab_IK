@@ -113,7 +113,7 @@ namespace OpenCLApp {
             cl::Program program (context_, kernel_, true);
             sort_t kernel(program, "bitonicSort");
             
-            cl::NDRange GlobalRange (size);
+            cl::NDRange GlobalRange (size / 2);
             cl::EnqueueArgs Args(queue_, GlobalRange);
             cl::Event evt = kernel(Args, clData, 1, 2);
 
@@ -149,7 +149,9 @@ namespace OpenCLApp {
     void App<T>::BitonicSort (cl::vector<T> &vec)
     {
         int vecSize = vec.size();
-        int newVecSize = std::pow (2, int(std::log2 (vec.size())) + 1);
+        int newVecSize = 1;
+        while (newVecSize < vecSize)
+            newVecSize <<= 1;
 
         vec.insert(vec.end(), newVecSize - vecSize, INT32_MAX);
 
@@ -177,7 +179,9 @@ namespace OpenCLApp {
     void App<T>::recBitonicSort (cl::vector<T> &vec)
     {
         int vecSize = vec.size();
-        int newVecSize = std::pow (2, int(std::log2 (vec.size())) + 1);
+        int newVecSize = 1;
+        while (newVecSize < vecSize)
+            newVecSize <<= 1;
 
         vec.insert(vec.end(), newVecSize - vecSize, INT32_MAX);
 

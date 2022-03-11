@@ -20,10 +20,7 @@ int main ()
     auto start = std::chrono::steady_clock::now ();
 
     app.GPUBitonicSort (test);
-    // app.BitonicSort (test);
-
     // std::sort (test.begin(), test.end());
-    // app.recBitonicSort (test);
 
     auto end = std::chrono::steady_clock::now ();
 
