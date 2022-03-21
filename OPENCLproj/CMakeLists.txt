@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.22)
 
 project (PozhiloyPumba_BitonicSort VERSION 1.0)
 
@@ -51,14 +51,17 @@ set (COMPILER_SETTINGS
 
     -Wsign-promo
     -Wdouble-promotion
-
+    
     -Wfloat-equal
-    -Wbool-compare
 
     -Wdiv-by-zero
-
+    
     -O2
 )
+    
+if(TIMER)
+    target_compile_definitions(${EXEC_FILE} PRIVATE TIMER)
+endif()
 
 target_compile_options(${EXEC_FILE} PRIVATE ${COMPILER_SETTINGS})
 target_compile_options(${GEN_FILE} PRIVATE ${COMPILER_SETTINGS})

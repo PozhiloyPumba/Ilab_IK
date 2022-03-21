@@ -4,3 +4,5 @@
 
 build
 *.out
+
+tests/test5.dat

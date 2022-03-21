@@ -1,8 +1,7 @@
-#include <iostream>
 #include <chrono>
-#include <random>
+#include <iostream>
 #include <map>
-
+#include <random>
 #include <vector>
 
 int main ()
@@ -17,7 +16,7 @@ int main ()
     int elemNum;
     std::cin >> elemNum;
     std::cout << elemNum << std::endl;
-    
+
     for (int i = 0; i < elemNum; ++i)
         std::cout << distr (generator) << " ";
 
