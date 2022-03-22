@@ -8,11 +8,29 @@
 #include <string>
 
 namespace OpenCLApp {
-    template <typename T>
-    std::string getTypeName ();
 
-    template <> std::string getTypeName<int> ()     {   return "int"; }
-    template <> std::string getTypeName<float> ()   {   return "float"; }
+    // clang-format off
+    template <typename T>
+    const std::string getTypeName ();
+
+    template <> inline const std::string getTypeName<int> ()                {   return "int"; }
+    template <> inline const std::string getTypeName<float> ()              {   return "float"; }
+    template <> inline const std::string getTypeName<double> ()             {   return "double"; }
+    template <> inline const std::string getTypeName<short> ()              {   return "short"; }
+    template <> inline const std::string getTypeName<char> ()               {   return "char"; }
+    template <> inline const std::string getTypeName<long long int> ()      {   return "long int"; }
+    template <> inline const std::string getTypeName<unsigned char> ()      {   return "unsigned char"; }
+    template <> inline const std::string getTypeName<unsigned short> ()     {   return "unsigned short"; }
+    template <> inline const std::string getTypeName<unsigned int> ()       {   return "unsigned int"; }
+    template <> inline const std::string getTypeName<unsigned long long> () {   return "unsigned long"; }
+    
+    template<typename T> inline const char* getKernelExtension() { return ""; }
+
+    template<> inline const char* getKernelExtension<double>() {
+        return "#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n";
+    }
+
+    // clang-format on
 
     template <typename T>
     class BitonicSort {
@@ -21,7 +39,6 @@ namespace OpenCLApp {
         cl::Context context_;
         cl::CommandQueue queue_;
         std::string kernel_;
-
 
         static cl::Platform selectGPUplatform ();
         static cl::Context getGPUcontext (cl_platform_id p);
@@ -34,8 +51,8 @@ namespace OpenCLApp {
         BitonicSort (cl::vector<T> &vec = {})
             : platform_ (selectGPUplatform ()), context_ (getGPUcontext (platform_ ())), queue_ (getCommandQueue (context_))
         {
-            kernel_ =   "#define KERNEL_TYPE " + getTypeName<T> () +
-                        R"(
+            kernel_ = "#define KERNEL_TYPE " + getTypeName<T> () +
+                      R"(
                         __kernel void bitonicSort(__global KERNEL_TYPE *A, int subPower, int power)
                         {
                             int i = get_global_id(0);
@@ -49,10 +66,9 @@ namespace OpenCLApp {
                             }
                         }
                         )";
-            
+
             GPUBitonicSort (vec);
         }
-
     };
 
     template <typename T>

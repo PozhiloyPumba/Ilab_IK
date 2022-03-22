@@ -8,9 +8,11 @@ int main ()
     size_t size;
     std::cin >> size;
 
-    cl::vector<float> test (size);
+    using type = int;
 
-    std::copy_n (std::istream_iterator<float> (std::cin), size, test.begin ());
+    cl::vector<type> test (size);
+
+    std::copy_n (std::istream_iterator<type> (std::cin), size, test.begin ());
 
     auto start = std::chrono::steady_clock::now ();
 
@@ -21,7 +23,7 @@ int main ()
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
-    std::copy (test.begin (), test.end (), std::ostream_iterator<float> (std::cout, " "));
+    std::copy (test.begin (), test.end (), std::ostream_iterator<type> (std::cout, " "));
     std::cout << std::endl;
 
 #ifdef TIMER
