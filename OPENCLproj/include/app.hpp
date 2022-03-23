@@ -24,34 +24,55 @@ namespace OpenCLApp {
     template <> inline const std::string getTypeName<unsigned int> ()       {   return "unsigned int"; }
     template <> inline const std::string getTypeName<unsigned long long> () {   return "unsigned long"; }
     
-    template<typename T> inline const char* getKernelExtension() { return ""; }
+    template<typename T> inline const std::string getKernelExtension() { return ""; }
 
-    template<> inline const char* getKernelExtension<double>() {
+    template<> inline const std::string getKernelExtension<double>() {
         return "#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n";
     }
 
     // clang-format on
 
+    class Platform {
+        static inline cl::Platform platform_;
+        static inline bool isCreated_ = false;
+        
+        public:
+        static cl::Platform &selectGPUplatform ();
+    };
+
+    class Context {
+        static inline cl::Context context_;
+        static inline bool isCreated_ = false;
+        
+        public:
+        static cl::Context &getGPUcontext (cl_platform_id p);
+    };
+
+    class Queue {
+        static inline cl::CommandQueue queue_;
+        static inline bool isCreated_ = false;
+        
+        public:
+        static cl::CommandQueue &getCommandQueue (cl::Context &ctx);
+    };
+
     template <typename T>
     class BitonicSort {
     private:
-        cl::Platform platform_;
-        cl::Context context_;
-        cl::CommandQueue queue_;
+        cl::Platform &platform_;
+        cl::Context &context_;
+        cl::CommandQueue &queue_;
         std::string kernel_;
-
-        static cl::Platform selectGPUplatform ();
-        static cl::Context getGPUcontext (cl_platform_id p);
-        static cl::CommandQueue getCommandQueue (cl::Context &ctx);
 
         using sort_t = cl::KernelFunctor<cl::Buffer, cl_int, cl_int>;
         void GPUBitonicSort (cl::vector<T> &vec);
 
     public:
         BitonicSort (cl::vector<T> &vec = {})
-            : platform_ (selectGPUplatform ()), context_ (getGPUcontext (platform_ ())), queue_ (getCommandQueue (context_))
+            : platform_ (Platform::selectGPUplatform ()), context_ (Context::getGPUcontext (platform_ ())), queue_ (Queue::getCommandQueue (context_))
         {
-            kernel_ = "#define KERNEL_TYPE " + getTypeName<T> () +
+            kernel_ = getKernelExtension<T> () +
+                      "#define KERNEL_TYPE " + getTypeName<T> () +
                       R"(
                         __kernel void bitonicSort(__global KERNEL_TYPE *A, int subPower, int power)
                         {
@@ -71,9 +92,11 @@ namespace OpenCLApp {
         }
     };
 
-    template <typename T>
-    cl::Platform BitonicSort<T>::selectGPUplatform ()
+    cl::Platform &Platform::selectGPUplatform ()
     {
+        if (isCreated_)
+            return platform_;
+        
         cl::vector<cl::Platform> platforms;
 
         cl::Platform::get (&platforms);
@@ -84,30 +107,48 @@ namespace OpenCLApp {
             std::vector<cl::Device> devices;
             (*curIt).getDevices (CL_DEVICE_TYPE_ALL, &devices);
 
-            if ((*curIt).getInfo<CL_PLATFORM_NAME> () == "NVIDIA CUDA")  // TODO only for me
-                // if (numDevices > 0)
-                return *curIt;
+#ifdef NVIDIA
+            if ((*curIt).getInfo<CL_PLATFORM_NAME> () == "NVIDIA CUDA") {
+#else
+            if (numDevices > 0) {
+#endif
+                platform_ = *curIt;
+                isCreated_ = true;
+
+                return platform_;
+            }
         }
         throw std::runtime_error ("No platform with GPU devices(((");
     }
 
-    template <typename T>
-    cl::Context BitonicSort<T>::getGPUcontext (cl_platform_id p)
+    cl::Context &Context::getGPUcontext (cl_platform_id p)
     {
+        if (isCreated_)
+            return context_;
+        
         cl_context_properties cprops[] = {
             CL_CONTEXT_PLATFORM,
             reinterpret_cast<cl_context_properties> (p),
             0};
 
-        return cl::Context (CL_DEVICE_TYPE_GPU, cprops);
+        context_ = cl::Context (CL_DEVICE_TYPE_GPU, cprops);
+        isCreated_ = true;
+        return context_;
     }
 
-    template <typename T>
-    cl::CommandQueue BitonicSort<T>::getCommandQueue (cl::Context &ctx)
+    cl::CommandQueue &Queue::getCommandQueue (cl::Context &ctx)
     {
+        if (isCreated_)
+            return queue_;
+        
         std::vector<cl::Device> devices = ctx.getInfo<CL_CONTEXT_DEVICES> ();
+        #if 0   // for print device name
         std::cout << (devices[0]).getInfo<CL_DEVICE_NAME> () << std::endl;
-        return cl::CommandQueue (ctx, devices[0]);
+        #endif
+        queue_ = cl::CommandQueue (ctx, devices[0]);
+        isCreated_ = true;
+        
+        return queue_;
     }
 
     template <typename T>
