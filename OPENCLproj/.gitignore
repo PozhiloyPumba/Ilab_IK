@@ -6,3 +6,4 @@ build
 *.out
 
 tests/test5.dat
+tests/ans/test5.ans

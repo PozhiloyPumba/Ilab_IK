@@ -63,5 +63,9 @@ if(TIMER)
     target_compile_definitions(${EXEC_FILE} PRIVATE TIMER)
 endif()
 
+if(NVIDIA)
+    target_compile_definitions(${EXEC_FILE} PRIVATE NVIDIA)
+endif()
+
 target_compile_options(${EXEC_FILE} PRIVATE ${COMPILER_SETTINGS})
 target_compile_options(${GEN_FILE} PRIVATE ${COMPILER_SETTINGS})
