@@ -27,7 +27,6 @@ set (GEN_FILE "generator")
 set (TEST_FILE "tests")
 
 find_package(GTest REQUIRED)
-set (GTEST_ROOT ${CMAKE_SOURCE_DIR}/../3rdParty/googletests/gTest)
 
 set (SOURCES
     sources/main.cpp
@@ -52,7 +51,6 @@ add_executable(${EXEC_FILE} ${SOURCES})
 target_include_directories(${EXEC_FILE} PRIVATE include)
 target_include_directories(${TEST_FILE} PRIVATE include)
 target_link_libraries(${TEST_FILE} PRIVATE "${GTEST_LIBRARIES}" "pthread" OpenCL::OpenCL)
-target_include_directories(${TEST_FILE} PRIVATE headers "${GTEST_INCLUDE_DIRS}")
 
 target_link_libraries(${EXEC_FILE} OpenCL::OpenCL)
 

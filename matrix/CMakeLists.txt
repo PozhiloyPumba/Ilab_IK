@@ -24,7 +24,6 @@ set (EXEC_FILE "matrix")
 set (TEST_FILE "tests")
 
 find_package(GTest REQUIRED)
-set (GTEST_ROOT ${CMAKE_SOURCE_DIR}/../3rdParty/googletests/gTest)
 
 set (TESTS	
     sources/test.cpp
@@ -45,7 +44,6 @@ target_include_directories(${EXEC_FILE} PRIVATE include)
 target_include_directories(${TEST_FILE} PRIVATE include)
 
 target_link_libraries(${TEST_FILE} PRIVATE "${GTEST_LIBRARIES}" "pthread")
-target_include_directories(${TEST_FILE} PRIVATE headers "${GTEST_INCLUDE_DIRS}")
 
 set (COMPILER_SETTINGS
     -std=c++2a

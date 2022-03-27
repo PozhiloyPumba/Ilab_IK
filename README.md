@@ -7,4 +7,4 @@
 | [tree](tree) | It is reference to our realization of tree task |  
 | [triangles](triangles) | It is reference to our realization of triangle task |  
 | [matrix](matrix) | It is my realization of determinant calculation |  
-
+| [Bitonic sort](OPENCLproj) | It is my realization of parallel bitonic sort on GPU with OPENCL | 
