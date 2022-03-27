@@ -20,13 +20,11 @@ if(CLANG_FORMAT)
     )
 endif()
 
-add_subdirectory(googletest)
-
 set (EXEC_FILE "matrix")
 set (TEST_FILE "tests")
 
-set (GTEST_ROOT ${CMAKE_SOURCE_DIR}/googletests/gTest)
 find_package(GTest REQUIRED)
+set (GTEST_ROOT ${CMAKE_SOURCE_DIR}/../3rdParty/googletests/gTest)
 
 set (TESTS	
     sources/test.cpp
