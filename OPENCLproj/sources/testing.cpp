@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <vector>
-#include <cassert>
 
 #include "app.hpp"
 
@@ -38,7 +39,7 @@ namespace {
         size_t size;
         std::cin >> size;
 
-        cl::vector<type> test (size);
+        cl::vector<T> test (size);
 
         std::copy_n (std::istream_iterator<T> (std::cin), size, test.begin ());
         assert (std::cin.good ());
@@ -56,6 +57,8 @@ namespace {
         cl::vector<T> test = inputArr<T> (filenameTests);
         cl::vector<T> right = inputArr<T> (filenameAnsws);
 
+        OpenCLApp::BitonicSort sort (test);
+
         ASSERT_EQ (test, right);
     }
 }  // namespace
@@ -64,31 +67,57 @@ namespace {
 
 TEST (intTest, test1)
 {
-    testSort<int> ("../tests/test1.txt", "../tests/ans/test1.ans");
+    testSort<int> ("../tests/test1.dat", "../tests/ans/test1.ans");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (intTest, test2)
 {
-    testSort<int> ("../tests/test2.txt", "../tests/ans/test2.ans");
+    testSort<int> ("../tests/test2.dat", "../tests/ans/test2.ans");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (intTest, test3)
 {
-    testSort<int> ("../tests/test3.txt", "../tests/ans/test3.ans");
+    testSort<int> ("../tests/test3.dat", "../tests/ans/test3.ans");
 }
 
 //-----------------------------------------------------------------------------------------------------
 
 TEST (intTest, test4)
 {
-    testSort<int> ("../tests/test4.txt", "../tests/ans/test4.ans");
+    testSort<int> ("../tests/test4.dat", "../tests/ans/test4.ans");
 }
 
 //-----------------------------------------------------------------------------------------------------
+
+TEST (floatTest, test1)
+{
+    testSort<float> ("../tests/ftest1.dat", "../tests/ans/ftest1.ans");
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (shortTest, test1)
+{
+    testSort<short> ("../tests/shtest1.dat", "../tests/ans/shtest1.ans");
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (doubleTest, test1)
+{
+    testSort<double> ("../tests/dtest1.dat", "../tests/ans/dtest1.ans");
+}
+
+//-----------------------------------------------------------------------------------------------------
+
+TEST (unsignedTest, test1)
+{
+    testSort<unsigned int> ("../tests/utest1.dat", "../tests/ans/utest1.ans");
+}
 
 //=====================================================================================================
 

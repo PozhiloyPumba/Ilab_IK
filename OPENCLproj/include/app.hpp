@@ -35,24 +35,24 @@ namespace OpenCLApp {
     class Platform {
         static inline cl::Platform platform_;
         static inline bool isCreated_ = false;
-        
-        public:
+
+    public:
         static cl::Platform &selectGPUplatform ();
     };
 
     class Context {
         static inline cl::Context context_;
         static inline bool isCreated_ = false;
-        
-        public:
+
+    public:
         static cl::Context &getGPUcontext (cl_platform_id p);
     };
 
     class Queue {
         static inline cl::CommandQueue queue_;
         static inline bool isCreated_ = false;
-        
-        public:
+
+    public:
         static cl::CommandQueue &getCommandQueue (cl::Context &ctx);
     };
 
@@ -96,7 +96,7 @@ namespace OpenCLApp {
     {
         if (isCreated_)
             return platform_;
-        
+
         cl::vector<cl::Platform> platforms;
 
         cl::Platform::get (&platforms);
@@ -125,7 +125,7 @@ namespace OpenCLApp {
     {
         if (isCreated_)
             return context_;
-        
+
         cl_context_properties cprops[] = {
             CL_CONTEXT_PLATFORM,
             reinterpret_cast<cl_context_properties> (p),
@@ -140,14 +140,14 @@ namespace OpenCLApp {
     {
         if (isCreated_)
             return queue_;
-        
+
         std::vector<cl::Device> devices = ctx.getInfo<CL_CONTEXT_DEVICES> ();
-        #if 0   // for print device name
+#if 0  // for print device name
         std::cout << (devices[0]).getInfo<CL_DEVICE_NAME> () << std::endl;
-        #endif
+#endif
         queue_ = cl::CommandQueue (ctx, devices[0]);
         isCreated_ = true;
-        
+
         return queue_;
     }
 

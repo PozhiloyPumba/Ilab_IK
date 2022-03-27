@@ -24,6 +24,10 @@ find_package(OpenCL REQUIRED)
 
 set (EXEC_FILE "sort")
 set (GEN_FILE "generator")
+set (TEST_FILE "tests")
+
+find_package(GTest REQUIRED)
+set (GTEST_ROOT ${CMAKE_SOURCE_DIR}/../3rdParty/googletests/gTest)
 
 set (SOURCES
     sources/main.cpp
@@ -33,13 +37,22 @@ set (GEN
     sources/generator.cpp
 )
 
+set (TESTS	
+    sources/testing.cpp
+)
+
 set (HEADERS
     include/app.hpp
 )
 
+add_executable(${TEST_FILE} ${TESTS})
 add_executable(${GEN_FILE} ${GEN})
 add_executable(${EXEC_FILE} ${SOURCES})
+
 target_include_directories(${EXEC_FILE} PRIVATE include)
+target_include_directories(${TEST_FILE} PRIVATE include)
+target_link_libraries(${TEST_FILE} PRIVATE "${GTEST_LIBRARIES}" "pthread" OpenCL::OpenCL)
+target_include_directories(${TEST_FILE} PRIVATE headers "${GTEST_INCLUDE_DIRS}")
 
 target_link_libraries(${EXEC_FILE} OpenCL::OpenCL)
 
@@ -69,3 +82,4 @@ endif()
 
 target_compile_options(${EXEC_FILE} PRIVATE ${COMPILER_SETTINGS})
 target_compile_options(${GEN_FILE} PRIVATE ${COMPILER_SETTINGS})
+target_compile_options(${TEST_FILE} PRIVATE ${COMPILER_SETTINGS})

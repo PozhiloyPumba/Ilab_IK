@@ -18,8 +18,7 @@ int main ()
     auto start = std::chrono::steady_clock::now ();
 #endif
 
-    // OpenCLApp::BitonicSort sort (test);
-    std::sort (test.begin (), test.end ());
+    OpenCLApp::BitonicSort sort (test);
 
 #ifdef TIMER
     auto end = std::chrono::steady_clock::now ();
