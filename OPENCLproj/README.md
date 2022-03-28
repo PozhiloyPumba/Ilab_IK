@@ -13,7 +13,7 @@ $ make
 ```
 $ git submodule init
 $ git submodule update
-$ cd googletest
+$ sudo cp googletest /usr/src/gtest && cd /usr/src/gtest
 $ sudo cmake CMakeLists.txt
 $ sudo make
 ```
