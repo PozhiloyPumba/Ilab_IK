@@ -101,7 +101,7 @@ namespace OpenCLApp {
 
         cl::Platform::get (&platforms);
 
-        for (auto curIt = platforms.rbegin (), endIt = platforms.rend (); curIt != endIt; ++curIt) {
+        for (auto curIt = platforms.begin (), endIt = platforms.end (); curIt != endIt; ++curIt) {
             cl_uint numDevices = 0;
             ::clGetDeviceIDs ((*curIt) (), CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
             std::vector<cl::Device> devices;
