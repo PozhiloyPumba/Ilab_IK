@@ -106,7 +106,6 @@ namespace OpenCLApp {
             ::clGetDeviceIDs ((*curIt) (), CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
             std::vector<cl::Device> devices;
             (*curIt).getDevices (CL_DEVICE_TYPE_ALL, &devices);
-            std::cout << (*curIt).getInfo<CL_PLATFORM_NAME> () << std::endl;
 #ifdef NVIDIA
             if ((*curIt).getInfo<CL_PLATFORM_NAME> () == "NVIDIA CUDA") {
 #else

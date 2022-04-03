@@ -5,22 +5,13 @@
 ---
 ## How to build my project:
 ```
-$ mkdir build && cd build
-$ cmake ..
-$ make
-```
-## If you haven't gtests you can install it go to 3rdParty/ from root of repository
-```
-$ git submodule init
-$ git submodule update
-$ sudo cp googletest /usr/src/gtest && cd /usr/src/gtest
-$ sudo cmake CMakeLists.txt
-$ sudo make
+$ cmake -B build && cd build
+$ cmake --build .
 ```
 
 ## Compiler settings:
 ```
-$ g++ -std=c++2a -Wall -Wextra -Wpedantic -Wsign-promo -Wdouble-promotion -Wfloat-equal -Wdiv-by-zero -O2
+$ std=c++17, O2, (-Wall -Wextra | /W4)
 ```
 
 ## To run the program, enter

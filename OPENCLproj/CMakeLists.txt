@@ -2,6 +2,7 @@ cmake_minimum_required (VERSION 3.10)
 
 project (PozhiloyPumba_BitonicSort VERSION 1.0)
 
+# clang-format
 find_program(CLANG_FORMAT "clang-format")
 if(CLANG_FORMAT)
     file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
@@ -20,7 +21,19 @@ if(CLANG_FORMAT)
     )
 endif()
 
+# if OpenCL doesn't install it is not worked
 find_package(OpenCL REQUIRED)
+
+# compiler options
+if(MSVC)
+add_compile_options("/W4" "$<$<CONFIG:RELEASE>:/O2>")
+else()
+add_compile_options("-Wall" "-Wextra" "$<$<CONFIG:RELEASE>:-O2>")
+endif()
+
+# required standart
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 enable_testing()
 
@@ -37,23 +50,13 @@ set (GEN
     sources/generator.cpp
 )
 
-set (HEADERS
-    include/app.hpp
-)
-
 add_executable(${GEN_FILE} ${GEN})
 add_executable(${EXEC_FILE} ${SOURCES})
 
 target_include_directories(${EXEC_FILE} PRIVATE include)
 
+# linking with OpenCL
 target_link_libraries(${EXEC_FILE} OpenCL::OpenCL)
-
-set (COMPILER_SETTINGS
-    -std=c++2a
-    -Wall
-    
-    -O2
-)
 
 if(TIMER)
     target_compile_definitions(${EXEC_FILE} PRIVATE TIMER)
@@ -62,6 +65,3 @@ endif()
 if(NVIDIA)
     target_compile_definitions(${EXEC_FILE} PRIVATE NVIDIA)
 endif()
-
-target_compile_options(${EXEC_FILE} PRIVATE ${COMPILER_SETTINGS})
-target_compile_options(${GEN_FILE} PRIVATE ${COMPILER_SETTINGS})
