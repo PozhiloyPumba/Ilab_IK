@@ -10,21 +10,22 @@ int main ()
 
     using type = int;
 
-    cl::vector<type> test (size);
+    cl::vector<type> vec (size);
 
-    std::copy_n (std::istream_iterator<type> (std::cin), size, test.begin ());
+    std::copy_n (std::istream_iterator<type> (std::cin), size, vec.begin ());
+    OpenCLApp::BitonicSort<type> sort ("../sources/kernels/simple.cl");
 
 #ifdef TIMER
     auto start = std::chrono::steady_clock::now ();
 #endif
 
-    OpenCLApp::BitonicSort sort (test);
+    sort.GPUBitonicSort (vec);
 
 #ifdef TIMER
     auto end = std::chrono::steady_clock::now ();
 #endif
 
-    std::copy (test.begin (), test.end (), std::ostream_iterator<type> (std::cout, " "));
+    std::copy (vec.begin (), vec.end (), std::ostream_iterator<type> (std::cout, " "));
     std::cout << std::endl;
 
 #ifdef TIMER

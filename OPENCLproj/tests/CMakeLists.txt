@@ -1,5 +1,5 @@
 set (TEST_SRC 
-    testing.cpp
+    correctTesting.cpp
 )
 
 # for template tests I need different binary files

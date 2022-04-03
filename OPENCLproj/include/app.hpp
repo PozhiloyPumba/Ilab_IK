@@ -1,11 +1,21 @@
-#define CL_HPP_ENABLE_EXCEPTIONS
-#define CL_HPP_TARGET_OPENCL_VERSION 200
+#ifndef APP_HPP__
+#define APP_HPP__
 
-#include <CL/opencl.hpp>
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
+
+#ifndef CL_HPP_TARGET_OPENCL_VERSION
+#define CL_HPP_MINIMUM_OPENCL_VERSION 200
+#define CL_HPP_TARGET_OPENCL_VERSION 200
+#endif
+
+#define CL_HPP_CL_1_2_DEFAULT_BUILD
+#define CL_HPP_ENABLE_EXCEPTIONS
+#define CL_QUEUE_PROFILING_ENABLE
+
+#include <CL/opencl.hpp>
 
 namespace OpenCLApp {
 
@@ -65,31 +75,29 @@ namespace OpenCLApp {
         std::string kernel_;
 
         using sort_t = cl::KernelFunctor<cl::Buffer, cl_int, cl_int>;
-        void GPUBitonicSort (cl::vector<T> &vec);
 
     public:
-        BitonicSort (cl::vector<T> &vec = {})
+        BitonicSort (const std::string &kernelSource)
             : platform_ (Platform::selectGPUplatform ()), context_ (Context::getGPUcontext (platform_ ())), queue_ (Queue::getCommandQueue (context_))
         {
             kernel_ = getKernelExtension<T> () +
-                      "#define KERNEL_TYPE " + getTypeName<T> () +
-                      R"(
-                        __kernel void bitonicSort(__global KERNEL_TYPE *A, int subPower, int power)
-                        {
-                            int i = get_global_id(0);
-                            i = (i / subPower) * (subPower << 1) + i % subPower;
-                            int swapIndex = i | subPower;
-                            KERNEL_TYPE first = A[i];
-                            KERNEL_TYPE second = A[swapIndex];
-                            if (!(i & power) == (first > second)) {
-                                A[i] = second;
-                                A[swapIndex] = first;
-                            }
-                        }
-                        )";
+                      "#define KERNEL_TYPE " + getTypeName<T> () + "\n";
 
-            GPUBitonicSort (vec);
+            std::ifstream in;
+            in.exceptions (std::ifstream::failbit | std::ifstream::badbit);
+            in.open (kernelSource);
+
+            while (!in.eof()) {
+                std::string newLine;
+                std::getline (in, newLine);
+
+                kernel_ += newLine + "\n";
+            }
+
+            in.close ();
         }
+
+        long GPUBitonicSort (cl::vector<T> &vec);
     };
 
     cl::Platform &Platform::selectGPUplatform ()
@@ -144,14 +152,14 @@ namespace OpenCLApp {
 #if 0  // for print device name
         std::cout << (devices[0]).getInfo<CL_DEVICE_NAME> () << std::endl;
 #endif
-        queue_ = cl::CommandQueue (ctx, devices[0]);
+        queue_ = cl::CommandQueue (ctx, devices[0], CL_QUEUE_PROFILING_ENABLE);
         isCreated_ = true;
 
         return queue_;
     }
 
     template <typename T>
-    void BitonicSort<T>::GPUBitonicSort (cl::vector<T> &vec)
+    long BitonicSort<T>::GPUBitonicSort (cl::vector<T> &vec)
     {
         int vecSize = vec.size ();
 
@@ -166,7 +174,10 @@ namespace OpenCLApp {
 
         cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
         cl::copy (queue_, vec.begin (), vec.begin () + size, clData);
-
+        
+        cl_ulong GPUTimeStart, GPUTimeFin;
+        long GPUTime;
+        
         try {
             cl::Program program (context_, kernel_, true);
             sort_t kernel (program, "bitonicSort");
@@ -180,9 +191,13 @@ namespace OpenCLApp {
                     cl::EnqueueArgs locArgs (queue_, evt, GlobalRange);
 
                     evt = kernel (locArgs, clData, subPower >> 1, power);
+                    evt.wait ();
+                    
+                    GPUTimeStart = evt.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+                    GPUTimeFin = evt.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+                    GPUTime += (GPUTimeFin - GPUTimeStart);
                 }
             }
-            evt.wait ();
         }
         catch (cl::BuildError &err) {
             std::cerr << "OCL BUILD ERROR: " << err.err () << ":" << err.what ()
@@ -191,15 +206,19 @@ namespace OpenCLApp {
             for (auto e : err.getBuildLog ())
                 std::cerr << e.second;
             std::cerr << "-- End log --\n";
-            return;
+            return -1;
         }
         catch (cl::Error &e) {
             std::cerr << "OCL ERROR: " << e.err () << ":" << e.what ()
                       << std::endl;
-            return;
+            return -1;
         }
 
         cl::copy (queue_, clData, vec.begin (), vec.begin () + size);
         vec.erase (vec.begin () + vecSize, vec.end ());
+
+        return GPUTime;
     }
 }  // namespace OpenCLApp
+
+#endif
