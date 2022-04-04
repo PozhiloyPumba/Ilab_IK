@@ -202,7 +202,7 @@ namespace OpenCLApp {
             cl::copy (queue_, vec.begin (), vec.begin () + size, clData);
         #else
             T *clData = reinterpret_cast <T*> (::clSVMAlloc(context_(), cl::SVMTraitReadWrite<>::getSVMMemFlags(), size * sizeof(T), 0));
-            queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size * sizeof(T));
+            queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_WRITE, size * sizeof(T));
 
             std::copy (vec.begin (), vec.end (), clData);
             queue_.enqueueUnmapSVM (clData);
@@ -250,8 +250,8 @@ namespace OpenCLApp {
             vec.erase (vec.begin () + vecSize, vec.end ());
         #else
             vec.clear ();
-            queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size * sizeof(T));
-            std::copy (clData, clData + size, std::inserter (vec, vec.begin ()));
+            queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_READ, size * sizeof(T));
+            std::copy (clData, clData + vecSize, std::inserter (vec, vec.begin ()));
             queue_.enqueueUnmapSVM (clData);
             ::clSVMFree (context_(), clData);
         #endif
