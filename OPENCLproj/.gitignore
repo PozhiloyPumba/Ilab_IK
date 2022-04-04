@@ -4,5 +4,3 @@
 
 build
 *.out
-tests/testdata/test7.dat
-tests/testdata/test8.dat
