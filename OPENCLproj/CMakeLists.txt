@@ -26,18 +26,30 @@ find_package(OpenCL REQUIRED)
 
 # compiler options
 if(MSVC)
-add_compile_options("/W4" "$<$<CONFIG:RELEASE>:/O2>")
+    add_compile_options("/W4" "$<$<CONFIG:RELEASE>:/O2>")
 else()
-add_compile_options("-Wall" "-Wextra" "$<$<CONFIG:RELEASE>:-O2>")
+    add_compile_options("-Wall" "-Wextra" "$<$<CONFIG:RELEASE>:-O2>")
 endif()
 
 # required standart
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# enable test system
 enable_testing()
 
 add_subdirectory(tests)
+
+# adding custom targets
+add_custom_target(
+    check_correct
+    COMMAND ${CMAKE_CTEST_COMMAND} -L CORRECT_TESTS
+)
+
+add_custom_target(
+    check_perf
+    COMMAND ${CMAKE_CTEST_COMMAND} -V -L PERF_TESTS
+)
 
 set (EXEC_FILE "sort")
 set (GEN_FILE "generator")
@@ -57,10 +69,6 @@ target_include_directories(${EXEC_FILE} PRIVATE include)
 
 # linking with OpenCL
 target_link_libraries(${EXEC_FILE} OpenCL::OpenCL)
-
-if(TIMER)
-    target_compile_definitions(${EXEC_FILE} PRIVATE TIMER)
-endif()
 
 if(NVIDIA)
     target_compile_definitions(${EXEC_FILE} PRIVATE NVIDIA)

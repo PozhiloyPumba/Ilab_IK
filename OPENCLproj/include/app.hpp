@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <chrono>
 
 #ifndef CL_HPP_TARGET_OPENCL_VERSION
 #define CL_HPP_MINIMUM_OPENCL_VERSION 200
@@ -18,6 +19,24 @@
 #include <CL/opencl.hpp>
 
 namespace OpenCLApp {
+
+    class Timer {
+        std::chrono::high_resolution_clock::time_point start_;
+        std::chrono::high_resolution_clock::time_point end_;
+
+    public:
+        void timerInit () { start_ = std::chrono::high_resolution_clock::now (); }
+        void timerEnd ()  { end_   = std::chrono::high_resolution_clock::now (); }
+        long getTimeNs () 
+        { 
+            auto elapsed_seconds = std::chrono::duration_cast< std::chrono::nanoseconds >(end_ - start_);
+            return elapsed_seconds.count ();
+        }
+        long getTimeMs () 
+        { 
+            return getTimeNs () / 1000000;
+        }
+    };
 
     // clang-format off
     template <typename T>
@@ -74,10 +93,13 @@ namespace OpenCLApp {
         cl::CommandQueue &queue_;
         std::string kernel_;
 
+        std::vector<cl::Event> profiling_;
+
         using sort_t = cl::KernelFunctor<cl::Buffer, cl_int, cl_int>;
+        using SVM_sort_t = cl::KernelFunctor<T*, cl_int, cl_int>;
 
     public:
-        BitonicSort (const std::string &kernelSource)
+        BitonicSort (const std::string &kernelSource)   //TODO: make loading kernel source normal
             : platform_ (Platform::selectGPUplatform ()), context_ (Context::getGPUcontext (platform_ ())), queue_ (Queue::getCommandQueue (context_))
         {
             kernel_ = getKernelExtension<T> () +
@@ -97,7 +119,9 @@ namespace OpenCLApp {
             in.close ();
         }
 
-        long GPUBitonicSort (cl::vector<T> &vec);
+        void GPUBitonicSort (cl::vector<T> &vec);
+        long getGPULastSortTimeNs ();
+        long getGPULastSortTimeMs () { return getGPULastSortTimeNs () / 1000000;}
     };
 
     cl::Platform &Platform::selectGPUplatform ()
@@ -159,28 +183,38 @@ namespace OpenCLApp {
     }
 
     template <typename T>
-    long BitonicSort<T>::GPUBitonicSort (cl::vector<T> &vec)
+    void BitonicSort<T>::GPUBitonicSort (cl::vector<T> &vec)
     {
+        profiling_.clear ();
         int vecSize = vec.size ();
 
         int size = 1;
         while (size < vecSize)
             size <<= 1;
 
-        int bufSize = size * sizeof (T);
-
         T maxNum = std::numeric_limits<T>::max ();
         vec.insert (vec.end (), size - vecSize, maxNum);
-
-        cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
-        cl::copy (queue_, vec.begin (), vec.begin () + size, clData);
         
-        cl_ulong GPUTimeStart, GPUTimeFin;
-        long GPUTime;
+        // #define SHARED
+        #ifndef SHARED
+            int bufSize = size * sizeof (T);
+            cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
+            cl::copy (queue_, vec.begin (), vec.begin () + size, clData);
+        #else
+            T *clData = reinterpret_cast <T*> (::clSVMAlloc(context_(), cl::SVMTraitReadWrite<>::getSVMMemFlags(), size * sizeof(T), 0));
+            queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size * sizeof(T));
+
+            std::copy (vec.begin (), vec.end (), clData);
+            queue_.enqueueUnmapSVM (clData);
+        #endif
         
         try {
             cl::Program program (context_, kernel_, true);
-            sort_t kernel (program, "bitonicSort");
+            #ifndef SHARED
+                sort_t kernel (program, "bitonicSort");            
+            #else 
+                SVM_sort_t kernel (program, "bitonicSort");
+            #endif
 
             cl::NDRange GlobalRange (size / 2);
             cl::EnqueueArgs Args (queue_, GlobalRange);
@@ -191,13 +225,10 @@ namespace OpenCLApp {
                     cl::EnqueueArgs locArgs (queue_, evt, GlobalRange);
 
                     evt = kernel (locArgs, clData, subPower >> 1, power);
-                    evt.wait ();
-                    
-                    GPUTimeStart = evt.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-                    GPUTimeFin = evt.getProfilingInfo<CL_PROFILING_COMMAND_END>();
-                    GPUTime += (GPUTimeFin - GPUTimeStart);
+                    profiling_.push_back (evt);
                 }
             }
+            evt.wait ();
         }
         catch (cl::BuildError &err) {
             std::cerr << "OCL BUILD ERROR: " << err.err () << ":" << err.what ()
@@ -206,18 +237,35 @@ namespace OpenCLApp {
             for (auto e : err.getBuildLog ())
                 std::cerr << e.second;
             std::cerr << "-- End log --\n";
-            return -1;
+            return;
         }
         catch (cl::Error &e) {
             std::cerr << "OCL ERROR: " << e.err () << ":" << e.what ()
                       << std::endl;
-            return -1;
+            return;
         }
+        
+        #ifndef SHARED
+            cl::copy (queue_, clData, vec.begin (), vec.begin () + size);
+            vec.erase (vec.begin () + vecSize, vec.end ());
+        #else
+            vec.clear ();
+            queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size * sizeof(T));
+            std::copy (clData, clData + size, std::inserter (vec, vec.begin ()));
+            queue_.enqueueUnmapSVM (clData);
+            ::clSVMFree (context_(), clData);
+        #endif
 
-        cl::copy (queue_, clData, vec.begin (), vec.begin () + size);
-        vec.erase (vec.begin () + vecSize, vec.end ());
+    }
 
-        return GPUTime;
+    template <typename T>
+    long BitonicSort<T>::getGPULastSortTimeNs ()
+    {
+        long GPUtime = 0;
+        for (auto evt: profiling_)
+            GPUtime += evt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evt.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+
+        return GPUtime;
     }
 }  // namespace OpenCLApp
 

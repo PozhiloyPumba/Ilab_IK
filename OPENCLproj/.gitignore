@@ -4,6 +4,5 @@
 
 build
 *.out
-
-tests/testdata/test5.dat
-tests/ans/test5.ans
+tests/testdata/test7.dat
+tests/testdata/test8.dat
