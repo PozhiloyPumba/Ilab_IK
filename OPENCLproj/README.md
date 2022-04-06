@@ -38,15 +38,23 @@ The sorting array
   alt="schedule of time"
   caption="dependence of the total sorting time on the size of the input data">
 
-## Also I compare cl::Buffer and SVM:
+## I compare cl::Buffer and SVM (You can add -DSHARED in cmake params for using shared memory instead cl::Buffer (LOCAL_SIZE=64)):
 
 <image
   src="pics/Figure_2.png"
   alt="schedule of time"
   caption="Comparing SVM & cl::buffer">
 
+## I compare speeds of different local sizes (You can define it by yourself in cmake params -DLOCAL_SIZE=value (64 by default)):
+
+<image
+  src="pics/Figure_3.png"
+  alt="schedule of time"
+  caption="Comparing time for different local sizes">
+
+
 ---
-## I choose the first platform, which have GPU device, but if you want run this code on platform "NVIDIA CUDA" add -DNVIDIA=on in cmake params. Also you can add -DSHARED for using shared memory instead cl::Buffer 
+## I choose the first platform, which have GPU device, but if you want run this code on platform "NVIDIA CUDA" add -DNVIDIA=on in cmake params. Also you can specialize the kernel code file by specifying -DKERNEL_SOURCE=filename in cmake params.
 ---
 ## If you want to check correct of this program you should run 
 ```
