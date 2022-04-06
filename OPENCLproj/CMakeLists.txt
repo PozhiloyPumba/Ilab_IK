@@ -73,3 +73,7 @@ target_link_libraries(${EXEC_FILE} OpenCL::OpenCL)
 if(NVIDIA)
     target_compile_definitions(${EXEC_FILE} PRIVATE NVIDIA)
 endif()
+
+if(KERNEL_SOURCE)
+    target_compile_definitions(${EXEC_FILE} PRIVATE KERNEL_SOURCE="${KERNEL_SOURCE}")
+endif()

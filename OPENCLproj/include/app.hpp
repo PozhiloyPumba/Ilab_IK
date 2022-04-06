@@ -19,6 +19,13 @@
 #include <CL/opencl.hpp>
 
 namespace OpenCLApp {
+    #ifndef KERNEL_SOURCE
+    #define KERNEL_SOURCE "../sources/kernels/simple.cl"
+    #endif
+
+    #ifndef LOCAL_SIZE
+    #define LOCAL_SIZE 64
+    #endif
 
     class Timer {
         std::chrono::high_resolution_clock::time_point start_;
@@ -99,7 +106,7 @@ namespace OpenCLApp {
         using SVM_sort_t = cl::KernelFunctor<T*, cl_int, cl_int>;
 
     public:
-        BitonicSort (const std::string &kernelSource)   //TODO: make loading kernel source normal
+        BitonicSort ()
             : platform_ (Platform::selectGPUplatform ()), context_ (Context::getGPUcontext (platform_ ())), queue_ (Queue::getCommandQueue (context_))
         {
             kernel_ = getKernelExtension<T> () +
@@ -107,7 +114,7 @@ namespace OpenCLApp {
 
             std::ifstream in;
             in.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-            in.open (kernelSource);
+            in.open (KERNEL_SOURCE);
 
             while (!in.eof()) {
                 std::string newLine;
@@ -173,7 +180,7 @@ namespace OpenCLApp {
             return queue_;
 
         std::vector<cl::Device> devices = ctx.getInfo<CL_CONTEXT_DEVICES> ();
-#if 0  // for print device name
+#ifdef DEBUG  // for print device name
         std::cout << (devices[0]).getInfo<CL_DEVICE_NAME> () << std::endl;
 #endif
         queue_ = cl::CommandQueue (ctx, devices[0], CL_QUEUE_PROFILING_ENABLE);
@@ -195,7 +202,6 @@ namespace OpenCLApp {
         T maxNum = std::numeric_limits<T>::max ();
         vec.insert (vec.end (), size - vecSize, maxNum);
         
-        // #define SHARED
         #ifndef SHARED
             int bufSize = size * sizeof (T);
             cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
@@ -217,12 +223,12 @@ namespace OpenCLApp {
             #endif
 
             cl::NDRange GlobalRange (size / 2);
-            cl::EnqueueArgs Args (queue_, GlobalRange);
+            cl::EnqueueArgs Args (queue_, GlobalRange, LOCAL_SIZE);
             cl::Event evt = kernel (Args, clData, 1, 2);
 
             for (int power = 4; power <= size; power <<= 1) {
                 for (int subPower = power; subPower > 1; subPower >>= 1) {
-                    cl::EnqueueArgs locArgs (queue_, evt, GlobalRange);
+                    cl::EnqueueArgs locArgs (queue_, evt, GlobalRange, LOCAL_SIZE);
 
                     evt = kernel (locArgs, clData, subPower >> 1, power);
                     profiling_.push_back (evt);

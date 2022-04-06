@@ -56,7 +56,7 @@ namespace {
         cl::vector<T> right (test.size ());
         std::copy (test.begin (), test.end (), right.begin ());
 
-        OpenCLApp::BitonicSort<T> sort ("../../sources/kernels/simple.cl");
+        OpenCLApp::BitonicSort<T> sort;
         sort.GPUBitonicSort (test);
 
         std::sort (right.begin (), right.end ());
