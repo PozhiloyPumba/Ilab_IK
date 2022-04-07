@@ -10,6 +10,10 @@ target_include_directories(${PERF_TEST_EXEC} PRIVATE ../include)
 target_link_libraries(${PERF_TEST_EXEC} OpenCL::OpenCL)
 target_compile_definitions(${PERF_TEST_EXEC} PRIVATE KERNEL_SOURCE="../../sources/kernels/simple.cl")
 
+if (PERF_TEST_TYPE)
+    target_compile_definitions(${PERF_TEST_EXEC} PRIVATE PERF_TEST_TYPE=${PERF_TEST_TYPE})
+endif()
+
 if(NVIDIA)
     target_compile_definitions(${PERF_TEST_EXEC} PRIVATE NVIDIA)
 endif()
@@ -53,9 +57,9 @@ target_compile_definitions(${U_TEST_EXEC} PRIVATE TEST_TYPE=unsigned\ int)
 target_compile_definitions(${F_TEST_EXEC} PRIVATE TEST_TYPE=float)
 
 # adding tests
-add_test(NAME FloatTest COMMAND ${F_TEST_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/testdata/ftest1.dat)
-add_test(NAME UnsignedTest COMMAND ${U_TEST_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/testdata/utest1.dat)
-add_test(NAME ShortTest COMMAND ${SH_TEST_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/testdata/shtest1.dat)
+add_test(NAME FloatTest COMMAND ${F_TEST_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/testdata/templateTests/ftest1.dat)
+add_test(NAME UnsignedTest COMMAND ${U_TEST_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/testdata/templateTests/utest1.dat)
+add_test(NAME ShortTest COMMAND ${SH_TEST_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/testdata/templateTests/shtest1.dat)
 add_test(NAME FirstIntTest COMMAND ${I_TEST_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/testdata/test1.dat)
 add_test(NAME SecondIntTest COMMAND ${I_TEST_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/testdata/test2.dat)
 

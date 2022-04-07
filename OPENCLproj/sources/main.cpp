@@ -6,7 +6,7 @@ int main ()
 {
     size_t size;
     std::cin >> size;
-    
+
     using type = int;
 
     cl::vector<type> vec (size);

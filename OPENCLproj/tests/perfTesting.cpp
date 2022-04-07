@@ -63,13 +63,14 @@ namespace {
         sort.GPUBitonicSort (test);
         timer.timerEnd ();
 
-        std::cout << "GPU TIME = " << sort.getGPULastSortTimeMs () << "ms\nBitonic time = " << timer.getTimeMs () << "ms" << std::endl;
+        std::cout << "************ GPU TIME ************ \n" << sort.getGPULastSortTimeMs () << 
+                    "ms\n************ Summary Bitonic time ************\n" << timer.getTimeMs () << "ms" << std::endl;
         
         timer.timerInit ();
         std::sort (right.begin (), right.end ());
         timer.timerEnd ();
 
-        std::cout << "STD::SORT TIME = " << timer.getTimeMs () << "ms" << std::endl;
+        std::cout << "************ STD::SORT TIME ************\n" << timer.getTimeMs () << "ms" << std::endl;
         
         if (test == right)
             return EXIT_SUCCESS;
@@ -79,11 +80,13 @@ namespace {
 
 //=====================================================================================================
 
-#define TEST_TYPE int
+#ifndef PERF_TEST_TYPE
+#define PERF_TEST_TYPE int
+#endif
 
 int main (int argc, char **argv)
 {
     if (argc != 2)
         return EXIT_FAILURE;
-    return testSort<TEST_TYPE> (argv[1]);    // TYPE from cmake 
+    return testSort<PERF_TEST_TYPE> (argv[1]);    // TYPE from cmake 
 }

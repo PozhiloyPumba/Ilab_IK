@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 
 #include "app.hpp"
 

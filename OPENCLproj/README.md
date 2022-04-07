@@ -29,7 +29,26 @@ N - numbers
 The sorting array
 ```
 ---
-# I implemented parallel variant of bitonic sort on GPU. You can find all idea of sort [here](https://en.wikipedia.org/wiki/Bitonic_sorter)
+## I choose the first platform, which have GPU device, but if you want run this code on platform "NVIDIA CUDA" add -DNVIDIA=on in cmake params. Also you can specialize the kernel code file by specifying -DKERNEL_SOURCE=filename in cmake params.
+---
+## If you want to check correct of this program you should run 
+```
+$ cmake --build . --target check_correct
+```
+## If you want to compare speed of this program on your GPU device with std::sort you should run
+```
+$ cmake --build . --target check_perf
+```
+### If you want check perf on your test for not integer you should set in cmake params -DPERF_TEST_TYPE=type and run from build
+```
+$ cd tests && ./perf_testing arg1
+```
+### where "arg1" it is source file name
+---
+
+# I implemented parallel variant of bitonic sort on GPU. You can find all idea of sort [here](https://en.wikipedia.org/wiki/Bitonic_sorter). Next I will give the measurement readings on my device
+
+---
 
 ## On my GPU (NVIDIA GeForce RTX 2060) and CPU (AMD Ryzen 5 3550H) I got this data
 
@@ -52,18 +71,4 @@ The sorting array
   alt="schedule of time"
   caption="Comparing time for different local sizes">
 
-
----
-## I choose the first platform, which have GPU device, but if you want run this code on platform "NVIDIA CUDA" add -DNVIDIA=on in cmake params. Also you can specialize the kernel code file by specifying -DKERNEL_SOURCE=filename in cmake params.
----
-## If you want to check correct of this program you should run 
-```
-$ cmake --build . --target check_correct
-```
-## If you want to compare speed of this program on your GPU device with std::sort you should run
-```
-$ cmake --build . --target check_perf
-```
-
----
 ## Implemented by second-year MIPT student Ivanov Ivan

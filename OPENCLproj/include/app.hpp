@@ -1,11 +1,11 @@
 #ifndef APP_HPP__
 #define APP_HPP__
 
+#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <chrono>
 
 #ifndef CL_HPP_TARGET_OPENCL_VERSION
 #define CL_HPP_MINIMUM_OPENCL_VERSION 200
@@ -19,13 +19,13 @@
 #include <CL/opencl.hpp>
 
 namespace OpenCLApp {
-    #ifndef KERNEL_SOURCE
-    #define KERNEL_SOURCE "../sources/kernels/simple.cl"
-    #endif
+#ifndef KERNEL_SOURCE
+#define KERNEL_SOURCE "../sources/kernels/simple.cl"
+#endif
 
-    #ifndef LOCAL_SIZE
-    #define LOCAL_SIZE 64
-    #endif
+#ifndef LOCAL_SIZE
+#define LOCAL_SIZE 64
+#endif
 
     class Timer {
         std::chrono::high_resolution_clock::time_point start_;
@@ -33,14 +33,14 @@ namespace OpenCLApp {
 
     public:
         void timerInit () { start_ = std::chrono::high_resolution_clock::now (); }
-        void timerEnd ()  { end_   = std::chrono::high_resolution_clock::now (); }
-        long getTimeNs () 
-        { 
-            auto elapsed_seconds = std::chrono::duration_cast< std::chrono::nanoseconds >(end_ - start_);
+        void timerEnd () { end_ = std::chrono::high_resolution_clock::now (); }
+        long getTimeNs ()
+        {
+            auto elapsed_seconds = std::chrono::duration_cast<std::chrono::nanoseconds> (end_ - start_);
             return elapsed_seconds.count ();
         }
-        long getTimeMs () 
-        { 
+        long getTimeMs ()
+        {
             return getTimeNs () / 1000000;
         }
     };
@@ -103,7 +103,7 @@ namespace OpenCLApp {
         std::vector<cl::Event> profiling_;
 
         using sort_t = cl::KernelFunctor<cl::Buffer, cl_int, cl_int>;
-        using SVM_sort_t = cl::KernelFunctor<T*, cl_int, cl_int>;
+        using SVM_sort_t = cl::KernelFunctor<T *, cl_int, cl_int>;
 
     public:
         BitonicSort ()
@@ -116,7 +116,7 @@ namespace OpenCLApp {
             in.exceptions (std::ifstream::failbit | std::ifstream::badbit);
             in.open (KERNEL_SOURCE);
 
-            while (!in.eof()) {
+            while (!in.eof ()) {
                 std::string newLine;
                 std::getline (in, newLine);
 
@@ -128,7 +128,7 @@ namespace OpenCLApp {
 
         void GPUBitonicSort (cl::vector<T> &vec);
         long getGPULastSortTimeNs ();
-        long getGPULastSortTimeMs () { return getGPULastSortTimeNs () / 1000000;}
+        long getGPULastSortTimeMs () { return getGPULastSortTimeNs () / 1000000; }
     };
 
     cl::Platform &Platform::selectGPUplatform ()
@@ -201,26 +201,26 @@ namespace OpenCLApp {
 
         T maxNum = std::numeric_limits<T>::max ();
         vec.insert (vec.end (), size - vecSize, maxNum);
-        
-        #ifndef SHARED
-            int bufSize = size * sizeof (T);
-            cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
-            cl::copy (queue_, vec.begin (), vec.begin () + size, clData);
-        #else
-            T *clData = reinterpret_cast <T*> (::clSVMAlloc(context_(), cl::SVMTraitReadWrite<>::getSVMMemFlags(), size * sizeof(T), 0));
-            queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_WRITE, size * sizeof(T));
 
-            std::copy (vec.begin (), vec.end (), clData);
-            queue_.enqueueUnmapSVM (clData);
-        #endif
-        
+#ifndef SHARED
+        int bufSize = size * sizeof (T);
+        cl::Buffer clData (context_, CL_MEM_READ_WRITE, bufSize);
+        cl::copy (queue_, vec.begin (), vec.begin () + size, clData);
+#else
+        T *clData = reinterpret_cast<T *> (::clSVMAlloc (context_ (), cl::SVMTraitReadWrite<>::getSVMMemFlags (), size * sizeof (T), 0));
+        queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_WRITE, size * sizeof (T));
+
+        std::copy (vec.begin (), vec.end (), clData);
+        queue_.enqueueUnmapSVM (clData);
+#endif
+
         try {
             cl::Program program (context_, kernel_, true);
-            #ifndef SHARED
-                sort_t kernel (program, "bitonicSort");            
-            #else 
-                SVM_sort_t kernel (program, "bitonicSort");
-            #endif
+#ifndef SHARED
+            sort_t kernel (program, "bitonicSort");
+#else
+            SVM_sort_t kernel (program, "bitonicSort");
+#endif
 
             cl::NDRange GlobalRange (size / 2);
             cl::EnqueueArgs Args (queue_, GlobalRange, LOCAL_SIZE);
@@ -250,26 +250,25 @@ namespace OpenCLApp {
                       << std::endl;
             return;
         }
-        
-        #ifndef SHARED
-            cl::copy (queue_, clData, vec.begin (), vec.begin () + size);
-            vec.erase (vec.begin () + vecSize, vec.end ());
-        #else
-            vec.clear ();
-            queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_READ, size * sizeof(T));
-            std::copy (clData, clData + vecSize, std::inserter (vec, vec.begin ()));
-            queue_.enqueueUnmapSVM (clData);
-            ::clSVMFree (context_(), clData);
-        #endif
 
+#ifndef SHARED
+        cl::copy (queue_, clData, vec.begin (), vec.begin () + size);
+        vec.erase (vec.begin () + vecSize, vec.end ());
+#else
+        vec.clear ();
+        queue_.enqueueMapSVM (clData, CL_TRUE, CL_MAP_READ, size * sizeof (T));
+        std::copy (clData, clData + vecSize, std::inserter (vec, vec.begin ()));
+        queue_.enqueueUnmapSVM (clData);
+        ::clSVMFree (context_ (), clData);
+#endif
     }
 
     template <typename T>
     long BitonicSort<T>::getGPULastSortTimeNs ()
     {
         long GPUtime = 0;
-        for (auto evt: profiling_)
-            GPUtime += evt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evt.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+        for (auto evt : profiling_)
+            GPUtime += evt.getProfilingInfo<CL_PROFILING_COMMAND_END> () - evt.getProfilingInfo<CL_PROFILING_COMMAND_START> ();
 
         return GPUtime;
     }
